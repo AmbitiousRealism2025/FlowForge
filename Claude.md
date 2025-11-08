@@ -11,8 +11,10 @@ This file provides guidance to Claude Code when working with the FlowForge proje
 1. **Read [STATUS.md](STATUS.md)** - This file tracks current implementation progress and tells you exactly what phase/task to work on next
 2. **Read this CLAUDE.md file completely** - Understand the project structure and guidelines
 3. **Follow the plan progression** - We are implementing in strict order:
-   - **Completed Phase**: Plan v1 - Phase 1.1 (Foundation Layer) ✅
-   - **Next Phase**: Plan v1 - Phase 1.2 (UI Component Library & Design System)
+   - **Completed Phases**:
+     - Plan v1 - Phase 1.1 (Foundation Layer) ✅
+     - Plan v1 - Phase 1.2 (API Layer) ✅
+   - **Next Phase**: Plan v1 - Phase 1.3 (Dashboard & Layout)
    - **Master Plan**: [plan-v1-:-master-plan-for-mvp.md](plan-v1-:-master-plan-for-mvp.md)
 
 4. **Update STATUS.md** - After completing each file/task, update the STATUS.md to reflect progress
@@ -31,7 +33,7 @@ This file provides guidance to Claude Code when working with the FlowForge proje
 
 FlowForge is an AI productivity companion designed for developers who practice "vibe coding" - using AI assistants to build software. The app tracks flow states, AI context health, and shipping velocity rather than traditional task completion metrics.
 
-**Current Status**: Phase 1.1 (Foundation Layer) complete. All TypeScript types, utilities, Zustand stores, and business logic services implemented and validated. Ready to begin Phase 1.2 (UI Component Library & Design System).
+**Current Status**: Phase 1.2 (API Layer) complete. All backend API routes and endpoints implemented with authentication, validation, error handling, and pagination. 16 complete API endpoints ready for frontend integration. Ready to begin Phase 1.3 (Dashboard & Layout).
 
 ## Quick Reference
 
