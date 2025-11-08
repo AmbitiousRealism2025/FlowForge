@@ -27,7 +27,7 @@ async function main() {
         userId: demoUser.id,
         name: 'FlowForge MVP',
         description: 'Building the AI productivity companion',
-        feelsRightScore: 85,
+        feelsRightScore: 4,
         shipTarget: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000), // 30 days from now
         stackNotes: 'Next.js 14, Prisma, PostgreSQL, Radix UI',
         pivotCount: 2,
@@ -38,7 +38,7 @@ async function main() {
         userId: demoUser.id,
         name: 'Personal Portfolio',
         description: 'Showcasing my vibe coding projects',
-        feelsRightScore: 60,
+        feelsRightScore: 3,
         stackNotes: 'Next.js, Tailwind, Vercel',
       },
     }),

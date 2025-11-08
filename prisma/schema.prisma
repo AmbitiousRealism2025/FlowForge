@@ -76,7 +76,7 @@ model Project {
   userId           String
   name             String
   description      String?
-  feelsRightScore  Int       @default(50)
+  feelsRightScore  Int       @default(3)
   shipTarget       DateTime?
   pivotCount       Int       @default(0)
   stackNotes       String?   @db.Text

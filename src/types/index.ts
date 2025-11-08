@@ -62,7 +62,7 @@ export interface User {
   flowState: FlowState
   shipStreak: number
   timezone: string
-  preferences?: any
+  preferences?: Record<string, unknown>
   createdAt: Date
   updatedAt: Date
 }
@@ -153,7 +153,7 @@ export interface Analytics {
   flowScore: number
   codingMinutes: number
   contextRefreshes: number
-  metadata?: any
+  metadata?: Record<string, unknown>
   createdAt: Date
 }
 
@@ -169,7 +169,6 @@ export interface ApiResponse<T> {
 }
 
 export interface PaginatedResponse<T> extends ApiResponse<T[]> {
-  items: T[]
   total: number
   page: number
   limit: number

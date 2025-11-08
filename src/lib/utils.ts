@@ -2,20 +2,11 @@ import { type ClassValue, clsx } from 'clsx'
 import { twMerge } from 'tailwind-merge'
 import {
   format,
-  formatDistance,
   formatDistanceToNow,
   parseISO,
-  startOfDay,
-  endOfDay,
-  isToday,
-  isYesterday,
-  differenceInDays,
-  differenceInHours,
   differenceInMinutes,
-  addDays,
-  subDays,
 } from 'date-fns'
-import { SessionType, NoteCategory, Momentum, FlowState } from '@/types'
+import { SessionType, NoteCategory, Momentum } from '@/types'
 
 // ============================================================================
 // Class Name Utilities
@@ -165,7 +156,7 @@ export function validateSessionType(value: string): value is SessionType {
 /**
  * Validate note category enum value
  */
-export function validateNoteCategory(value: string): value is NoteCategory {
+export function validateNoteCategory(value: NoteCategory | string): value is NoteCategory {
   return Object.values(NoteCategory).includes(value as NoteCategory)
 }
 

@@ -1,6 +1,6 @@
 import { create } from 'zustand'
 import { persist } from 'zustand/middleware'
-import { SessionType, SessionStatus } from '@/types'
+import { SessionType } from '@/types'
 import { formatDuration } from '@/lib/utils'
 
 // ============================================================================
@@ -30,7 +30,7 @@ interface SessionActions {
   resumeSession: () => void
   endSession: () => void
   updateElapsed: () => void
-  updateContextHealth: (health: number) => void
+  updateContextHealth: () => void
   syncWithServer: () => void
 }
 
@@ -136,10 +136,10 @@ export const useSessionStore = create<SessionStore>()(
        * Update context health with time-based degradation
        * Decreases by 10 points per hour
        */
-      updateContextHealth: (health) => {
+      updateContextHealth: () => {
         const state = get()
         const degradation = Math.floor((state.elapsedSeconds / 3600) * 10)
-        const calculatedHealth = Math.max(0, Math.min(100, health - degradation))
+        const calculatedHealth = Math.max(0, 100 - degradation)
         set({ contextHealth: calculatedHealth })
       },
 
@@ -182,6 +182,18 @@ export const useSessionStore = create<SessionStore>()(
         elapsedSeconds: state.elapsedSeconds,
         contextHealth: state.contextHealth,
       }),
+      merge: (persistedState, currentState) => {
+        const mergedState = {
+          ...currentState,
+          ...(persistedState as Partial<SessionStore>),
+        }
+
+        if (mergedState.startTime && typeof mergedState.startTime === 'string') {
+          mergedState.startTime = new Date(mergedState.startTime)
+        }
+
+        return mergedState
+      },
     }
   )
 )

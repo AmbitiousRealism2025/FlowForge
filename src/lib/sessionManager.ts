@@ -25,7 +25,7 @@ export async function startSession(
   sessionType: SessionType,
   projectId: string | null,
   aiModel: string,
-  userId: string
+  _userId: string
 ): Promise<ApiResponse<CodingSession>> {
   try {
     const payload: CreateSessionRequest = {

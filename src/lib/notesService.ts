@@ -183,7 +183,7 @@ export async function searchNotes(
     })
 
     if (searchQuery) params.append('q', searchQuery)
-    if (category) params.append('category', category)
+    if (category) params.append('category', String(category))
     if (tags.length > 0) params.append('tags', tags.join(','))
 
     const response = await fetch(`${API_BASE_URL}?${params.toString()}`)
@@ -193,7 +193,6 @@ export async function searchNotes(
       return {
         success: false,
         data: null,
-        items: [],
         total: 0,
         page,
         limit,
@@ -204,14 +203,20 @@ export async function searchNotes(
     }
 
     const data = await response.json()
+    const notes: Note[] = Array.isArray(data)
+      ? data
+      : Array.isArray(data.data)
+        ? data.data
+        : Array.isArray(data.items)
+          ? data.items
+          : []
     return {
       success: true,
-      data: data.items,
-      items: data.items,
-      total: data.total,
-      page: data.page,
-      limit: data.limit,
-      hasMore: data.hasMore,
+      data: notes,
+      total: data.total ?? notes.length,
+      page: data.page ?? page,
+      limit: data.limit ?? limit,
+      hasMore: data.hasMore ?? false,
       error: null,
       message: null,
     }
@@ -219,7 +224,6 @@ export async function searchNotes(
     return {
       success: false,
       data: null,
-      items: [],
       total: 0,
       page,
       limit,
@@ -343,26 +347,6 @@ export function getNoteCategoryLabel(category: NoteCategory): string {
       return 'Insight'
     default:
       return 'Note'
-  }
-}
-
-/**
- * Get Tailwind color class for note category
- */
-export function getNoteCategoryColor(category: NoteCategory): string {
-  switch (category) {
-    case NoteCategory.PROMPT_PATTERN:
-      return 'text-purple-500'
-    case NoteCategory.GOLDEN_CODE:
-      return 'text-yellow-500'
-    case NoteCategory.DEBUG_LOG:
-      return 'text-red-500'
-    case NoteCategory.MODEL_NOTE:
-      return 'text-blue-500'
-    case NoteCategory.INSIGHT:
-      return 'text-gray-500'
-    default:
-      return 'text-gray-400'
   }
 }
 

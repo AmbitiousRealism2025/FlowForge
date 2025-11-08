@@ -1,12 +1,20 @@
-import { NextAuthOptions } from 'next-auth'
+import type { DefaultSession, NextAuthConfig } from 'next-auth'
 import GoogleProvider from 'next-auth/providers/google'
 import GitHubProvider from 'next-auth/providers/github'
 import EmailProvider from 'next-auth/providers/email'
 import { PrismaAdapter } from '@auth/prisma-adapter'
 import { prisma } from '@/lib/prisma'
 
-export const authOptions: NextAuthOptions = {
-  adapter: PrismaAdapter(prisma) as any,
+declare module 'next-auth' {
+  interface Session {
+    user: {
+      id: string
+    } & DefaultSession['user']
+  }
+}
+
+export const authOptions: NextAuthConfig = {
+  adapter: PrismaAdapter(prisma),
   providers: [
     GoogleProvider({
       clientId: process.env.GOOGLE_CLIENT_ID!,
@@ -44,6 +52,8 @@ export const authOptions: NextAuthOptions = {
   },
   events: {
     async createUser({ user }) {
+      // Log new user creation (production should use proper logging service)
+      // eslint-disable-next-line no-console
       console.log('New user created:', user.email)
     },
   },

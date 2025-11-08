@@ -5,9 +5,9 @@ import {
   CreateProjectRequest,
   UpdateProjectRequest,
   ApiResponse,
-  PaginatedResponse,
 } from '@/types'
-import { formatRelativeTime, differenceInHours, formatDuration, validateFeelsRightScore } from '@/lib/utils'
+import { differenceInHours } from 'date-fns'
+import { formatRelativeTime, formatDuration, validateFeelsRightScore } from '@/lib/utils'
 
 // ============================================================================
 // Constants
@@ -222,16 +222,45 @@ export async function getProjectStats(projectId: string): Promise<{
   averageFeelsRightScore?: number
 }> {
   try {
-    const response = await fetch(`${API_BASE_URL}/${projectId}/stats`)
+    const [projectResponse, sessionsResponse] = await Promise.all([
+      fetch(`${API_BASE_URL}/${projectId}`),
+      fetch(`${API_BASE_URL}/${projectId}/sessions`),
+    ])
 
-    if (!response.ok) {
-      throw new Error('Failed to fetch project stats')
+    if (!projectResponse.ok) {
+      throw new Error('Failed to fetch project details')
     }
 
-    const data = await response.json()
-    return data
+    const project: Project = await projectResponse.json()
+
+    let sessions: CodingSession[] = []
+    if (sessionsResponse.ok) {
+      const sessionsPayload = await sessionsResponse.json()
+      if (Array.isArray(sessionsPayload)) {
+        sessions = sessionsPayload
+      } else if (Array.isArray(sessionsPayload.data)) {
+        sessions = sessionsPayload.data
+      } else if (Array.isArray(sessionsPayload.items)) {
+        sessions = sessionsPayload.items
+      }
+    }
+
+    const totalSessions = sessions.length
+    const totalSeconds = sessions.reduce((sum, session) => sum + (session.durationSeconds || 0), 0)
+    const totalCodingTime = formatDuration(totalSeconds)
+    const sortedSessions = [...sessions].sort(
+      (a, b) => new Date(b.startedAt).getTime() - new Date(a.startedAt).getTime()
+    )
+    const lastWorkedDate = sortedSessions.length > 0 ? new Date(sortedSessions[0].startedAt).toISOString() : null
+
+    return {
+      totalSessions,
+      totalCodingTime,
+      lastWorkedDate,
+      averageFeelsRightScore: project.feelsRightScore,
+    }
   } catch (error) {
-    console.error('Error fetching project stats:', error)
+    console.error('Error calculating project stats:', error)
     return {
       totalSessions: 0,
       totalCodingTime: '0m',

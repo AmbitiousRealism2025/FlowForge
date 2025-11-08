@@ -1,5 +1,5 @@
 import { StreakData, ApiResponse, Analytics } from '@/types'
-import { startOfDay, differenceInDays, format, addDays, subDays } from 'date-fns'
+import { startOfDay, differenceInDays, format, subDays } from 'date-fns'
 import { getUserTimezone } from '@/lib/utils'
 
 // ============================================================================
@@ -20,7 +20,7 @@ export function calculateShipStreak(analytics: Analytics[]): number {
   if (analytics.length === 0) return 0
 
   const timezone = getUserTimezone()
-  const today = startOfDay(new Date())
+  const today = normalizeToUserTimezone(new Date(), timezone)
   let currentStreak = 0
 
   // Sort analytics by date descending to ensure correct order
@@ -31,8 +31,8 @@ export function calculateShipStreak(analytics: Analytics[]): number {
   // Check each consecutive day for shipCount > 0
   for (let i = 0; i < sortedAnalytics.length; i++) {
     const record = sortedAnalytics[i]
-    const recordDate = startOfDay(new Date(record.date))
-    const expectedDate = startOfDay(subDays(today, i))
+    const recordDate = normalizeToUserTimezone(new Date(record.date), timezone)
+    const expectedDate = normalizeToUserTimezone(subDays(today, i), timezone)
 
     // Check if this record is for the expected consecutive day
     if (recordDate.getTime() === expectedDate.getTime()) {
@@ -57,6 +57,7 @@ export function calculateShipStreak(analytics: Analytics[]): number {
 export function calculateLongestStreak(analytics: Analytics[]): number {
   if (analytics.length === 0) return 0
 
+  const timezone = getUserTimezone()
   // Sort analytics by date ascending for iteration
   const sortedAnalytics = [...analytics].sort(
     (a, b) => new Date(a.date).getTime() - new Date(b.date).getTime()
@@ -67,7 +68,7 @@ export function calculateLongestStreak(analytics: Analytics[]): number {
   let lastDate: Date | null = null
 
   sortedAnalytics.forEach((record) => {
-    const recordDate = startOfDay(new Date(record.date))
+    const recordDate = normalizeToUserTimezone(new Date(record.date), timezone)
 
     if (record.shipCount > 0) {
       if (lastDate === null) {
@@ -138,7 +139,7 @@ export async function getStreakData(): Promise<ApiResponse<StreakData>> {
 /**
  * Mark ship for today
  */
-export async function markShipToday(metadata?: any): Promise<ApiResponse<Analytics>> {
+export async function markShipToday(metadata?: Record<string, unknown>): Promise<ApiResponse<Analytics>> {
   try {
     const timezone = getUserTimezone()
     const response = await fetch(`${API_BASE_URL}/ship`, {
@@ -214,10 +215,10 @@ export async function getWeeklyShipData(): Promise<
  */
 export function hasShippedToday(analytics: Analytics[]): boolean {
   const timezone = getUserTimezone()
-  const today = startOfDay(new Date())
+  const today = normalizeToUserTimezone(new Date(), timezone)
 
   return analytics.some((record) => {
-    const recordDate = startOfDay(new Date(record.date))
+    const recordDate = normalizeToUserTimezone(new Date(record.date), timezone)
     return recordDate.getTime() === today.getTime() && record.shipCount > 0
   })
 }
@@ -226,13 +227,14 @@ export function hasShippedToday(analytics: Analytics[]): boolean {
  * Get last ship date from analytics records
  */
 export function getLastShipDate(analytics: Analytics[]): Date | null {
+  const timezone = getUserTimezone()
   // Sort by date descending
   const sortedAnalytics = [...analytics].sort(
     (a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()
   )
 
   const lastShip = sortedAnalytics.find((record) => record.shipCount > 0)
-  return lastShip ? new Date(lastShip.date) : null
+  return lastShip ? normalizeToUserTimezone(new Date(lastShip.date), timezone) : null
 }
 
 /**
@@ -240,8 +242,9 @@ export function getLastShipDate(analytics: Analytics[]): Date | null {
  */
 export function getDaysSinceLastShip(lastShipDate: Date | null): number | null {
   if (!lastShipDate) return null
-  const today = startOfDay(new Date())
-  const lastShip = startOfDay(lastShipDate)
+  const timezone = getUserTimezone()
+  const today = normalizeToUserTimezone(new Date(), timezone)
+  const lastShip = normalizeToUserTimezone(lastShipDate, timezone)
   return differenceInDays(today, lastShip)
 }
 
