@@ -2,6 +2,10 @@
  * Core FlowForge type definitions
  */
 
+// ============================================================================
+// Enums (Aligned with Prisma Schema)
+// ============================================================================
+
 export enum FlowState {
   BLOCKED = 'BLOCKED',
   NEUTRAL = 'NEUTRAL',
@@ -14,6 +18,13 @@ export enum SessionType {
   EXPLORING = 'EXPLORING',
   DEBUGGING = 'DEBUGGING',
   SHIPPING = 'SHIPPING',
+}
+
+export enum SessionStatus {
+  ACTIVE = 'ACTIVE',
+  PAUSED = 'PAUSED',
+  COMPLETED = 'COMPLETED',
+  ABANDONED = 'ABANDONED',
 }
 
 export enum HabitCategory {
@@ -32,6 +43,17 @@ export enum NoteCategory {
   INSIGHT = 'INSIGHT',
 }
 
+export enum FlowBlockType {
+  FOCUS_TIME = 'FOCUS_TIME',
+  MEETING = 'MEETING',
+  BREAK = 'BREAK',
+  REVIEW = 'REVIEW',
+}
+
+// ============================================================================
+// Core Domain Models (Aligned with Prisma Schema)
+// ============================================================================
+
 export interface User {
   id: string
   email: string
@@ -39,6 +61,8 @@ export interface User {
   image?: string
   flowState: FlowState
   shipStreak: number
+  timezone: string
+  preferences?: any
   createdAt: Date
   updatedAt: Date
 }
@@ -52,11 +76,12 @@ export interface Project {
   shipTarget?: Date
   pivotCount: number
   stackNotes?: string
+  isActive: boolean
   createdAt: Date
   updatedAt: Date
 }
 
-export interface Session {
+export interface CodingSession {
   id: string
   userId: string
   projectId?: string
@@ -65,6 +90,8 @@ export interface Session {
   aiModelsUsed: string[]
   productivityScore?: number
   durationSeconds: number
+  checkpointNotes?: string
+  sessionStatus: SessionStatus
   startedAt: Date
   endedAt?: Date
 }
@@ -77,6 +104,7 @@ export interface Habit {
   streakCount: number
   targetFrequency: number
   lastCompletedAt?: Date
+  isActive: boolean
   createdAt: Date
 }
 
@@ -92,4 +120,190 @@ export interface Note {
   projectId?: string
   createdAt: Date
   updatedAt: Date
+}
+
+export interface FlowBlock {
+  id: string
+  userId: string
+  projectId?: string
+  startTime: Date
+  endTime: Date
+  blockType: FlowBlockType
+  notes?: string
+  createdAt: Date
+}
+
+export interface AIContext {
+  id: string
+  userId: string
+  modelName: string
+  contextHealth: number
+  issuesDetected: string[]
+  lastRefreshedAt: Date
+  conversationCount: number
+  createdAt: Date
+  updatedAt: Date
+}
+
+export interface Analytics {
+  id: string
+  userId: string
+  date: Date
+  shipCount: number
+  flowScore: number
+  codingMinutes: number
+  contextRefreshes: number
+  metadata?: any
+  createdAt: Date
+}
+
+// ============================================================================
+// API Response Types
+// ============================================================================
+
+export interface ApiResponse<T> {
+  success: boolean
+  data: T | null
+  error: string | null
+  message: string | null
+}
+
+export interface PaginatedResponse<T> extends ApiResponse<T[]> {
+  items: T[]
+  total: number
+  page: number
+  limit: number
+  hasMore: boolean
+}
+
+// ============================================================================
+// API Request Types
+// ============================================================================
+
+export interface CreateSessionRequest {
+  sessionType: SessionType
+  projectId?: string
+  aiModelsUsed: string[]
+}
+
+export interface UpdateSessionRequest {
+  durationSeconds?: number
+  aiContextHealth?: number
+  productivityScore?: number
+  checkpointNotes?: string
+  sessionStatus?: SessionStatus
+  endedAt?: Date
+}
+
+export interface CreateProjectRequest {
+  name: string
+  description?: string
+  feelsRightScore?: number
+  shipTarget?: Date
+  stackNotes?: string
+}
+
+export interface UpdateProjectRequest {
+  name?: string
+  description?: string
+  feelsRightScore?: number
+  shipTarget?: Date
+  stackNotes?: string
+  isActive?: boolean
+}
+
+export interface CreateNoteRequest {
+  title?: string
+  content: string
+  category: NoteCategory
+  tags: string[]
+  sessionId?: string
+  projectId?: string
+}
+
+export interface UpdateNoteRequest {
+  title?: string
+  content?: string
+  category?: NoteCategory
+  tags?: string[]
+  isTemplate?: boolean
+}
+
+// ============================================================================
+// Component Prop Types
+// ============================================================================
+
+export interface SessionTimerProps {
+  sessionId: string
+  startTime: Date
+  isPaused: boolean
+  onPause: () => void
+  onResume: () => void
+  onEnd: () => void
+}
+
+export interface SessionCardProps {
+  session: CodingSession
+  onDelete?: (sessionId: string) => void
+  onViewDetails?: (sessionId: string) => void
+}
+
+export interface ProjectCardProps {
+  project: Project
+  onUpdate?: (projectId: string) => void
+  onStartSession?: (projectId: string) => void
+}
+
+export interface FeelsRightSliderProps {
+  projectId: string
+  initialValue: number
+  onChange: (value: number) => void
+}
+
+export interface NoteCardProps {
+  note: Note
+  onEdit?: (noteId: string) => void
+  onDelete?: (noteId: string) => void
+}
+
+export interface ShipStreakCardProps {
+  currentStreak: number
+  longestStreak: number
+  lastShipDate?: Date
+  onMarkShip: () => void
+}
+
+// ============================================================================
+// Dashboard-Specific Types
+// ============================================================================
+
+export interface DashboardStats {
+  activeSessionId: string | null
+  shipStreak: number
+  activeProjectsCount: number
+  todaysCodingMinutes: number
+  flowState: FlowState
+}
+
+export interface StreakData {
+  currentStreak: number
+  longestStreak: number
+  lastShipDate?: Date
+}
+
+// ============================================================================
+// Utility Types
+// ============================================================================
+
+export type Momentum = 'HOT' | 'ACTIVE' | 'QUIET'
+
+export interface DateRange {
+  start: Date
+  end: Date
+}
+
+export interface SessionFilters {
+  sessionType?: SessionType
+  projectId?: string
+  dateRange?: DateRange
 }

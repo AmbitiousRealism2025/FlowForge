@@ -11,8 +11,8 @@ This file provides guidance to Claude Code when working with the FlowForge proje
 1. **Read [STATUS.md](STATUS.md)** - This file tracks current implementation progress and tells you exactly what phase/task to work on next
 2. **Read this CLAUDE.md file completely** - Understand the project structure and guidelines
 3. **Follow the plan progression** - We are implementing in strict order:
-   - **Current Phase**: Plan v1 - Phase 1.1 (Foundation Layer)
-   - **Plan Document**: [plan-v1-:-phase-1.1:-foundation-layer---type-system,-utilities,-stores-&-services.md](plan-v1-:-phase-1.1:-foundation-layer---type-system,-utilities,-stores-&-services.md)
+   - **Completed Phase**: Plan v1 - Phase 1.1 (Foundation Layer) ✅
+   - **Next Phase**: Plan v1 - Phase 1.2 (UI Component Library & Design System)
    - **Master Plan**: [plan-v1-:-master-plan-for-mvp.md](plan-v1-:-master-plan-for-mvp.md)
 
 4. **Update STATUS.md** - After completing each file/task, update the STATUS.md to reflect progress
