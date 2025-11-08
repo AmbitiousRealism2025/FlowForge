@@ -2,6 +2,31 @@
 
 This file provides guidance to Claude Code when working with the FlowForge project.
 
+---
+
+## 🚨 CRITICAL INSTRUCTIONS FOR CLAUDE CLOUD AGENT
+
+**Before starting ANY work on this project, you MUST:**
+
+1. **Read [STATUS.md](STATUS.md)** - This file tracks current implementation progress and tells you exactly what phase/task to work on next
+2. **Read this CLAUDE.md file completely** - Understand the project structure and guidelines
+3. **Follow the plan progression** - We are implementing in strict order:
+   - **Current Phase**: Plan v1 - Phase 1.1 (Foundation Layer)
+   - **Plan Document**: [plan-v1-:-phase-1.1:-foundation-layer---type-system,-utilities,-stores-&-services.md](plan-v1-:-phase-1.1:-foundation-layer---type-system,-utilities,-stores-&-services.md)
+   - **Master Plan**: [plan-v1-:-master-plan-for-mvp.md](plan-v1-:-master-plan-for-mvp.md)
+
+4. **Update STATUS.md** - After completing each file/task, update the STATUS.md to reflect progress
+
+**Implementation Rules:**
+- Follow the phase plan documents VERBATIM - they contain detailed implementation instructions
+- Do NOT skip ahead to other phases
+- Do NOT deviate from the specified architecture
+- Complete ALL files in a task group before moving to the next group
+- Test your implementations as you go
+- Update STATUS.md after each completed file
+
+---
+
 ## Project Overview
 
 FlowForge is an AI productivity companion designed for developers who practice "vibe coding" - using AI assistants to build software. The app tracks flow states, AI context health, and shipping velocity rather than traditional task completion metrics.
