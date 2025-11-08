@@ -6,29 +6,43 @@
 
 ## 📍 Current Status
 
-**Current Phase**: Phase 1.1 - Foundation Layer **COMPLETE** ✅
+**Current Phase**: Phase 1.2 - API Layer **COMPLETE** ✅
 
-**Current Task**: Phase 1.1 implementation completed. Ready for Phase 1.2.
+**Current Task**: Phase 1.2 implementation completed. Ready for Phase 1.3.
 
-**Plan Document**: [plan-v1-:-phase-1.1:-foundation-layer---type-system,-utilities,-stores-&-services.md](plan-v1-:-phase-1.1:-foundation-layer---type-system,-utilities,-stores-&-services.md)
+**Plan Document**: [plan-v1-:-phase-1.2:-api-layer---all-backend-routes-&-endpoints.md](plan-v1-:-phase-1.2:-api-layer---all-backend-routes-&-endpoints.md)
 
 ---
 
-## 🎯 Phase 1.1 Implementation Checklist
+## 🎯 Phase 1.2 Implementation Checklist
 
-### Group 1: Core Type System & Utilities ✅
-- [x] `src/types/index.ts` (MODIFY) - Extend type definitions with Prisma-aligned types
-- [x] `src/lib/utils.ts` (MODIFY) - Enhance utility functions with date/time, validation helpers
+### Group 1: Shared Utilities ✅
+- [x] `src/lib/api-utils.ts` (NEW) - Shared API utilities for authentication, error handling, pagination
+- [x] `src/lib/validations.ts` (NEW) - Zod validation schemas for all API endpoints
 
-### Group 2: Client State Management (Zustand Stores) ✅
-- [x] `src/store/sessionStore.ts` (NEW) - Active session state management
-- [x] `src/store/dashboardStore.ts` (NEW) - Dashboard UI state management
+### Group 2: Dashboard API Routes ✅
+- [x] `src/app/api/dashboard/focus/route.ts` (NEW) - Today's focus text management (GET, PUT)
+- [x] `src/app/api/dashboard/stats/route.ts` (NEW) - Aggregated dashboard statistics (GET)
 
-### Group 3: Business Logic Services ✅
-- [x] `src/lib/sessionManager.ts` (NEW) - Session lifecycle management service
-- [x] `src/lib/projectService.ts` (NEW) - Project management operations service
-- [x] `src/lib/notesService.ts` (NEW) - Notes CRUD operations service
-- [x] `src/lib/analyticsService.ts` (NEW) - Analytics calculations service
+### Group 3: Sessions API Routes ✅
+- [x] `src/app/api/sessions/route.ts` (NEW) - Sessions list and creation (GET, POST)
+- [x] `src/app/api/sessions/[id]/route.ts` (NEW) - Individual session operations (GET, PATCH, DELETE)
+- [x] `src/app/api/sessions/[id]/checkpoint/route.ts` (NEW) - Session checkpoint notes (POST)
+
+### Group 4: Projects API Routes ✅
+- [x] `src/app/api/projects/route.ts` (NEW) - Projects list and creation (GET, POST)
+- [x] `src/app/api/projects/[id]/route.ts` (NEW) - Individual project operations (GET, PATCH, DELETE)
+- [x] `src/app/api/projects/[id]/feels-right/route.ts` (NEW) - Feels-right score updates (PATCH)
+- [x] `src/app/api/projects/[id]/pivot/route.ts` (NEW) - Pivot recording (POST)
+
+### Group 5: Notes API Routes ✅
+- [x] `src/app/api/notes/route.ts` (NEW) - Notes list and creation (GET, POST)
+- [x] `src/app/api/notes/[id]/route.ts` (NEW) - Individual note operations (GET, PATCH, DELETE)
+
+### Group 6: Analytics API Routes ✅
+- [x] `src/app/api/analytics/streak/route.ts` (NEW) - Ship streak calculation (GET)
+- [x] `src/app/api/analytics/ship/route.ts` (NEW) - Mark ship today (POST)
+- [x] `src/app/api/analytics/weekly/route.ts` (NEW) - Weekly ship data (GET)
 
 ---
 
@@ -67,23 +81,27 @@
   - Comprehensive utility functions for dates, validation, formatting (20+ utilities)
   - Zustand stores for session and dashboard state management
   - Business logic services for sessions, projects, notes, and analytics
+- **Phase 1.2 - API Layer** ✅
+  - Shared API utilities (authentication, error handling, pagination, response builders)
+  - Zod validation schemas for all API endpoints
+  - Dashboard API routes (focus text, aggregated stats)
+  - Sessions API routes (CRUD operations, checkpoint notes)
+  - Projects API routes (CRUD operations, feels-right scores, pivot tracking)
+  - Notes API routes (CRUD operations with search and filtering)
+  - Analytics API routes (ship streaks, weekly data)
+  - 16 complete API endpoints with consistent patterns
 
-### 🔄 Next Phase: Phase 1.2 - UI Component Library & Design System
+### 🔄 Next Phase: Phase 1.3 - Dashboard & Layout
 **Deliverables:**
-- Radix UI component integration
-- Design system implementation
-- Reusable UI components
+- Dashboard page and layout components
+- Navigation (sidebar, mobile nav)
+- Core UI structure
 
-**Timeline**: Week 1-2 of 6-week MVP
+**Timeline**: Week 2-3 of 6-week MVP
 
 ### 📅 Upcoming Phases
 
-**Phase 1.2** - UI Component Library & Design System
-- Radix UI component integration
-- Design system implementation
-- Reusable UI components
-
-**Phase 1.3** - Dashboard & Core Features
+**Phase 1.3** - Dashboard & Layout
 - Dashboard page and layout
 - Session tracking UI
 - Project management UI
@@ -107,7 +125,9 @@
 ## 📖 Reference Documents
 
 - **Master Plan**: [plan-v1-:-master-plan-for-mvp.md](plan-v1-:-master-plan-for-mvp.md)
-- **Current Phase Plan**: [plan-v1-:-phase-1.1:-foundation-layer---type-system,-utilities,-stores-&-services.md](plan-v1-:-phase-1.1:-foundation-layer---type-system,-utilities,-stores-&-services.md)
+- **Completed Phase Plans**:
+  - [plan-v1-:-phase-1.1:-foundation-layer---type-system,-utilities,-stores-&-services.md](plan-v1-:-phase-1.1:-foundation-layer---type-system,-utilities,-stores-&-services.md)
+  - [plan-v1-:-phase-1.2:-api-layer---all-backend-routes-&-endpoints.md](plan-v1-:-phase-1.2:-api-layer---all-backend-routes-&-endpoints.md)
 - **Project Guide**: [CLAUDE.md](CLAUDE.md)
 - **Product Requirements**: Check project documentation for full PRD
 
