@@ -1,0 +1,246 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// NextAuth.js models
+model Account {
+  id                String  @id @default(cuid())
+  userId            String
+  type              String
+  provider          String
+  providerAccountId String
+  refresh_token     String? @db.Text
+  access_token      String? @db.Text
+  expires_at        Int?
+  token_type        String?
+  scope             String?
+  id_token          String? @db.Text
+  session_state     String?
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([provider, providerAccountId])
+}
+
+model Session {
+  id           String   @id @default(cuid())
+  sessionToken String   @unique
+  userId       String
+  expires      DateTime
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model VerificationToken {
+  identifier String
+  token      String   @unique
+  expires    DateTime
+
+  @@unique([identifier, token])
+}
+
+// FlowForge core models
+model User {
+  id            String    @id @default(cuid())
+  name          String?
+  email         String    @unique
+  emailVerified DateTime?
+  image         String?
+  flowState     FlowState @default(NEUTRAL)
+  shipStreak    Int       @default(0)
+  timezone      String    @default("UTC")
+  preferences   Json?
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  accounts         Account[]
+  sessions         Session[]
+  projects         Project[]
+  codingSessions   CodingSession[]
+  habits           Habit[]
+  notes            Note[]
+  flowBlocks       FlowBlock[]
+  aiContexts       AIContext[]
+  analyticsRecords Analytics[]
+}
+
+model Project {
+  id               String    @id @default(cuid())
+  userId           String
+  name             String
+  description      String?
+  feelsRightScore  Int       @default(50)
+  shipTarget       DateTime?
+  pivotCount       Int       @default(0)
+  stackNotes       String?   @db.Text
+  isActive         Boolean   @default(true)
+  createdAt        DateTime  @default(now())
+  updatedAt        DateTime  @updatedAt
+
+  user           User            @relation(fields: [userId], references: [id], onDelete: Cascade)
+  codingSessions CodingSession[]
+  notes          Note[]
+  flowBlocks     FlowBlock[]
+
+  @@index([userId])
+}
+
+model CodingSession {
+  id                String       @id @default(cuid())
+  userId            String
+  projectId         String?
+  sessionType       SessionType
+  aiContextHealth   Int          @default(100)
+  aiModelsUsed      String[]
+  productivityScore Int?
+  durationSeconds   Int          @default(0)
+  checkpointNotes   String?      @db.Text
+  sessionStatus     SessionStatus @default(ACTIVE)
+  startedAt         DateTime     @default(now())
+  endedAt           DateTime?
+
+  user    User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  project Project? @relation(fields: [projectId], references: [id], onDelete: SetNull)
+  notes   Note[]
+
+  @@index([userId])
+  @@index([projectId])
+}
+
+model Habit {
+  id               String         @id @default(cuid())
+  userId           String
+  name             String
+  category         HabitCategory
+  streakCount      Int            @default(0)
+  targetFrequency  Int            @default(1)
+  lastCompletedAt  DateTime?
+  isActive         Boolean        @default(true)
+  createdAt        DateTime       @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+}
+
+model Note {
+  id              String       @id @default(cuid())
+  userId          String
+  title           String
+  content         String       @db.Text
+  category        NoteCategory
+  tags            String[]
+  isTemplate      Boolean      @default(false)
+  sessionId       String?
+  projectId       String?
+  createdAt       DateTime     @default(now())
+  updatedAt       DateTime     @updatedAt
+
+  user    User           @relation(fields: [userId], references: [id], onDelete: Cascade)
+  session CodingSession? @relation(fields: [sessionId], references: [id], onDelete: SetNull)
+  project Project?       @relation(fields: [projectId], references: [id], onDelete: SetNull)
+
+  @@index([userId])
+  @@index([category])
+}
+
+model FlowBlock {
+  id        String        @id @default(cuid())
+  userId    String
+  projectId String?
+  startTime DateTime
+  endTime   DateTime
+  blockType FlowBlockType
+  notes     String?
+  createdAt DateTime      @default(now())
+
+  user    User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  project Project? @relation(fields: [projectId], references: [id], onDelete: SetNull)
+
+  @@index([userId])
+}
+
+model AIContext {
+  id                String   @id @default(cuid())
+  userId            String
+  modelName         String
+  contextHealth     Int      @default(100)
+  issuesDetected    String[]
+  lastRefreshedAt   DateTime @default(now())
+  conversationCount Int      @default(0)
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+}
+
+model Analytics {
+  id              String   @id @default(cuid())
+  userId          String
+  date            DateTime
+  shipCount       Int      @default(0)
+  flowScore       Int      @default(0)
+  codingMinutes   Int      @default(0)
+  contextRefreshes Int     @default(0)
+  metadata        Json?
+  createdAt       DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, date])
+  @@index([userId])
+}
+
+// Enums
+enum FlowState {
+  BLOCKED
+  NEUTRAL
+  FLOWING
+  DEEP_FLOW
+}
+
+enum SessionType {
+  BUILDING
+  EXPLORING
+  DEBUGGING
+  SHIPPING
+}
+
+enum SessionStatus {
+  ACTIVE
+  PAUSED
+  COMPLETED
+  ABANDONED
+}
+
+enum HabitCategory {
+  DAILY_SHIP
+  CONTEXT_REFRESH
+  CODE_REVIEW
+  BACKUP_CHECK
+  FLOW_BLOCK
+}
+
+enum NoteCategory {
+  PROMPT_PATTERN
+  GOLDEN_CODE
+  DEBUG_LOG
+  MODEL_NOTE
+  INSIGHT
+}
+
+enum FlowBlockType {
+  FOCUS_TIME
+  MEETING
+  BREAK
+  REVIEW
+}
