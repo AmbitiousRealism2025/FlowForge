@@ -13,8 +13,9 @@ import {
   formatRelativeTime,
   formatDuration,
   validateFeelsRightScore,
-  getMomentumEmoji as getEmoji,
-  getMomentumLabel as getLabel,
+  getMomentumEmoji,
+  getMomentumLabel,
+  formatShipTarget,
 } from '@/lib/utils'
 
 // ============================================================================
@@ -113,22 +114,26 @@ export async function fetchProjectById(projectId: string): Promise<ApiResponse<P
 /**
  * Create a new project
  */
-export async function createProject(
-  name: string,
-  description: string | null = null,
-  feelsRightScore: number = 3,
-  shipTarget: Date | null = null,
-  stackNotes: string | null = null
-): Promise<ApiResponse<Project>> {
-  try {
-    const payload: CreateProjectRequest = {
-      name,
-      description: description || undefined,
-      feelsRightScore,
-      shipTarget: shipTarget || undefined,
-      stackNotes: stackNotes || undefined,
-    }
+export async function createProject(request: CreateProjectRequest): Promise<ApiResponse<Project>> {
+  const payload: CreateProjectRequest = {
+    name: request.name,
+    description: request.description || undefined,
+    feelsRightScore: request.feelsRightScore ?? 3,
+    shipTarget: request.shipTarget || undefined,
+    stackNotes: request.stackNotes || undefined,
+  }
 
+  const validation = validateProjectData(payload)
+  if (!validation.isValid) {
+    return {
+      success: false,
+      data: null,
+      error: validation.errors.join(', ') || 'Invalid project data',
+      message: null,
+    }
+  }
+
+  try {
     const response = await fetch(API_BASE_URL, {
       method: 'POST',
       headers: {
@@ -230,7 +235,7 @@ export async function updateFeelsRightScore(
       headers: {
         'Content-Type': 'application/json',
       },
-      body: JSON.stringify({ feelsRightScore: score }),
+      body: JSON.stringify({ score }),
     })
 
     if (!response.ok) {
@@ -418,33 +423,6 @@ export function calculateMomentum(project: Project, sessions: CodingSession[]): 
   return 'QUIET'
 }
 
-/**
- * Get emoji for momentum status
- */
-export function getMomentumEmoji(momentum: Momentum): string {
-  switch (momentum) {
-    case 'HOT':
-      return '🔥'
-    case 'ACTIVE':
-      return '⚡'
-    case 'QUIET':
-      return '💤'
-  }
-}
-
-/**
- * Get human-readable label for momentum
- */
-export function getMomentumLabel(momentum: Momentum): string {
-  switch (momentum) {
-    case 'HOT':
-      return 'Hot'
-    case 'ACTIVE':
-      return 'Active'
-    case 'QUIET':
-      return 'Quiet'
-  }
-}
 
 // ============================================================================
 // Feels Right Score Functions
@@ -494,23 +472,6 @@ export function getFeelsRightLabel(score: number): string {
 // Formatting Functions
 // ============================================================================
 
-/**
- * Format ship target date as relative time with context
- */
-export function formatShipTarget(shipTarget: Date | null | undefined): string {
-  if (!shipTarget) return 'No target set'
-
-  const now = new Date()
-  const targetDate = new Date(shipTarget)
-  const isPast = targetDate < now
-
-  const relativeTime = formatRelativeTime(targetDate)
-
-  if (isPast) {
-    return `Shipped ${relativeTime}`
-  }
-  return `Ships ${relativeTime}`
-}
 
 /**
  * Get total project duration from sessions

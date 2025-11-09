@@ -3,7 +3,7 @@ import { redirect } from 'next/navigation'
 import { authOptions } from '@/lib/auth'
 import { Sidebar } from '@/components/layout/Sidebar'
 import { MobileNav } from '@/components/layout/MobileNav'
-import { Toaster } from '@/components/ui/Toast'
+import { Toaster } from '@/components/ui/Toaster'
 
 export default async function DashboardLayout({
   children,

@@ -392,8 +392,18 @@ export function calculateContextHealth(
  * Get session duration in seconds
  */
 export function getSessionDuration(session: CodingSession): number {
-  if (session.endedAt) {
-    return calculateDuration(session.startedAt, session.endedAt)
+  const startedAt =
+    typeof session.startedAt === 'string'
+      ? new Date(session.startedAt)
+      : session.startedAt
+
+  const endedAt =
+    typeof session.endedAt === 'string'
+      ? new Date(session.endedAt)
+      : session.endedAt
+
+  if (endedAt) {
+    return calculateDuration(startedAt, endedAt)
   }
   return session.durationSeconds
 }

@@ -415,6 +415,42 @@ export function getSessionStatusLabel(status: SessionStatus): string {
 }
 
 /**
+ * Get emoji icon for note category
+ */
+export function getNoteCategoryIcon(category: NoteCategory): string {
+  switch (category) {
+    case NoteCategory.PROMPT_PATTERN:
+      return '💡'
+    case NoteCategory.GOLDEN_CODE:
+      return '⭐'
+    case NoteCategory.DEBUG_LOG:
+      return '🐛'
+    case NoteCategory.MODEL_NOTE:
+      return '🤖'
+    case NoteCategory.INSIGHT:
+      return '💭'
+  }
+}
+
+/**
+ * Get human-readable label for note category
+ */
+export function getNoteCategoryLabel(category: NoteCategory): string {
+  switch (category) {
+    case NoteCategory.PROMPT_PATTERN:
+      return 'Prompt Pattern'
+    case NoteCategory.GOLDEN_CODE:
+      return 'Golden Code'
+    case NoteCategory.DEBUG_LOG:
+      return 'Debug Log'
+    case NoteCategory.MODEL_NOTE:
+      return 'Model Note'
+    case NoteCategory.INSIGHT:
+      return 'Insight'
+  }
+}
+
+/**
  * Get Tailwind color class for note category
  */
 export function getNoteCategoryColor(category: NoteCategory): string {
@@ -429,6 +465,24 @@ export function getNoteCategoryColor(category: NoteCategory): string {
       return 'text-blue-500'
     case NoteCategory.INSIGHT:
       return 'text-gray-500'
+  }
+}
+
+/**
+ * Get Tailwind background color class for note category
+ */
+export function getNoteCategoryBgColor(category: NoteCategory): string {
+  switch (category) {
+    case NoteCategory.PROMPT_PATTERN:
+      return 'bg-purple-100 dark:bg-purple-900/20'
+    case NoteCategory.GOLDEN_CODE:
+      return 'bg-yellow-100 dark:bg-yellow-900/20'
+    case NoteCategory.DEBUG_LOG:
+      return 'bg-red-100 dark:bg-red-900/20'
+    case NoteCategory.MODEL_NOTE:
+      return 'bg-blue-100 dark:bg-blue-900/20'
+    case NoteCategory.INSIGHT:
+      return 'bg-gray-100 dark:bg-gray-900/20'
   }
 }
 
@@ -535,85 +589,24 @@ export function calculatePercentage(
 }
 
 // ============================================================================
-// Analytics Utilities
+// Tag Utilities
 // ============================================================================
 
 /**
- * Normalize date to start of day in user's timezone
- * Critical for accurate 'today' calculations across timezones
+ * Parse comma-separated tags string into array
+ * Trims whitespace, removes duplicates, converts to lowercase
  */
-export function normalizeToUserTimezone(date: Date, timezone: string = 'UTC'): Date {
-  // For now, use startOfDay which normalizes to local timezone
-  // In production, consider using date-fns-tz for proper timezone handling
-  return startOfDay(date)
+export function parseTags(tagsInput: string): string[] {
+  return tagsInput
+    .split(',')
+    .map((tag) => tag.trim().toLowerCase())
+    .filter((tag) => tag.length > 0)
+    .filter((tag, index, array) => array.indexOf(tag) === index)
 }
 
 /**
- * Format streak display with fire emoji
+ * Format tags array into comma-separated string
  */
-export function formatStreakDisplay(currentStreak: number): string {
-  if (currentStreak === 0) {
-    return 'No active streak'
-  }
-  const plural = currentStreak === 1 ? 'day' : 'days'
-  return `🔥 ${currentStreak} ${plural} streak`
-}
-
-/**
- * Get milestone message for special streak numbers
- * Returns null if not a milestone
- */
-export function getStreakMilestone(currentStreak: number): string | null {
-  const milestones: Record<number, string> = {
-    7: 'Week streak! 🎉',
-    14: 'Two week streak! 🎊',
-    30: 'Month streak! 🎊',
-    50: 'Halfway to 100! 🌟',
-    100: 'Century! 🏆',
-    365: 'Full year! 🎆',
-  }
-
-  return milestones[currentStreak] || null
-}
-
-/**
- * Determine if celebration should trigger
- * Celebrate when: streak extended OR reached milestone
- */
-export function shouldCelebrate(previousStreak: number, newStreak: number): boolean {
-  // Celebrate when streak extends
-  if (newStreak > previousStreak) return true
-
-  // Celebrate when reaching a milestone
-  if (getStreakMilestone(newStreak) !== null) return true
-
-  return false
-}
-
-/**
- * Get short weekday label (Mon, Tue, etc.)
- */
-export function getWeekdayLabel(date: Date): string {
-  return format(date, 'EEE')
-}
-
-/**
- * Get last 7 days including today in chronological order
- */
-export function getLast7Days(): Date[] {
-  const days: Date[] = []
-  const today = new Date()
-
-  for (let i = 6; i >= 0; i--) {
-    days.push(subDays(today, i))
-  }
-
-  return days
-}
-
-/**
- * Format date for chart tooltips
- */
-export function formatChartDate(date: Date): string {
-  return format(date, 'MMM d, yyyy')
+export function formatTags(tags: string[]): string {
+  return tags.join(', ')
 }

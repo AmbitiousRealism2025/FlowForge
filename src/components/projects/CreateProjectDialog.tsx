@@ -28,13 +28,7 @@ export function CreateProjectDialog({
 
   const mutation = useMutation({
     mutationFn: async (data: CreateProjectRequest) => {
-      const result = await createProject(
-        data.name,
-        data.description || null,
-        data.feelsRightScore,
-        data.shipTarget || null,
-        data.stackNotes || null
-      )
+      const result = await createProject(data)
       if (!result.success) {
         throw new Error(result.error || 'Failed to create project')
       }
