@@ -24,7 +24,7 @@ export const UpdateSessionSchema = z.object({
 })
 
 export const CheckpointSchema = z.object({
-  checkpointText: z.string().min(1).max(2000),
+  checkpointNotes: z.string().min(1).max(2000),
 })
 
 // ============================================================================

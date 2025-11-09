@@ -6,7 +6,7 @@ import {
   parseISO,
   differenceInMinutes,
 } from 'date-fns'
-import { SessionType, NoteCategory, Momentum } from '@/types'
+import { SessionType, NoteCategory, Momentum, CodingSession, SessionStatus } from '@/types'
 
 // ============================================================================
 // Class Name Utilities
@@ -23,6 +23,20 @@ export function cn(...inputs: ClassValue[]) {
 // ============================================================================
 // Date & Time Utilities
 // ============================================================================
+
+/**
+ * Format duration in seconds to HH:MM:SS format (zero-padded)
+ * Used for session timers and precise duration display
+ */
+export function formatHMS(seconds: number): string {
+  const hours = Math.floor(seconds / 3600)
+  const minutes = Math.floor((seconds % 3600) / 60)
+  const secs = Math.floor(seconds % 60)
+
+  const pad = (num: number) => num.toString().padStart(2, '0')
+
+  return `${pad(hours)}:${pad(minutes)}:${pad(secs)}`
+}
 
 /**
  * Format duration in seconds to human-readable string
@@ -226,6 +240,81 @@ export function getSessionTypeColor(sessionType: SessionType): string {
 }
 
 /**
+ * Get human-readable label for session type
+ */
+export function getSessionTypeLabel(sessionType: SessionType): string {
+  switch (sessionType) {
+    case SessionType.BUILDING:
+      return 'Building'
+    case SessionType.EXPLORING:
+      return 'Exploring'
+    case SessionType.DEBUGGING:
+      return 'Debugging'
+    case SessionType.SHIPPING:
+      return 'Shipping'
+  }
+}
+
+/**
+ * Get icon/emoji for session type
+ */
+export function getSessionTypeIcon(sessionType: SessionType): string {
+  switch (sessionType) {
+    case SessionType.BUILDING:
+      return '🔨'
+    case SessionType.EXPLORING:
+      return '🔍'
+    case SessionType.DEBUGGING:
+      return '🐛'
+    case SessionType.SHIPPING:
+      return '🚀'
+    default:
+      return '💻'
+  }
+}
+
+/**
+ * Get human-readable label for session status
+ */
+export function getSessionStatusLabel(sessionStatus: SessionStatus): string {
+  switch (sessionStatus) {
+    case SessionStatus.ACTIVE:
+      return 'In Progress'
+    case SessionStatus.PAUSED:
+      return 'Paused'
+    case SessionStatus.COMPLETED:
+      return 'Completed'
+    case SessionStatus.ABANDONED:
+      return 'Abandoned'
+  }
+}
+
+/**
+ * Get Tailwind color class for session status
+ */
+export function getSessionStatusColor(sessionStatus: SessionStatus): string {
+  switch (sessionStatus) {
+    case SessionStatus.ACTIVE:
+      return 'text-flow-green'
+    case SessionStatus.PAUSED:
+      return 'text-caution-amber'
+    case SessionStatus.COMPLETED:
+      return 'text-blue-500'
+    case SessionStatus.ABANDONED:
+      return 'text-stuck-red'
+  }
+}
+
+/**
+ * Calculate context health color based on health percentage
+ */
+export function calculateContextHealthColor(health: number): string {
+  if (health >= 70) return 'text-flow-green'
+  if (health >= 40) return 'text-caution-amber'
+  return 'text-stuck-red'
+}
+
+/**
  * Get Tailwind color class for note category
  */
 export function getNoteCategoryColor(category: NoteCategory): string {
@@ -317,4 +406,26 @@ export function calculatePercentage(
   if (total === 0) return 0
   const percentage = (value / total) * 100
   return Number(percentage.toFixed(decimalPlaces))
+}
+
+// ============================================================================
+// Session Display Utilities (moved from sessionManager)
+// ============================================================================
+
+/**
+ * Get human-readable session status
+ */
+export function getSessionStatus(session: CodingSession): string {
+  switch (session.sessionStatus) {
+    case SessionStatus.ACTIVE:
+      return 'In Progress'
+    case SessionStatus.PAUSED:
+      return 'Paused'
+    case SessionStatus.COMPLETED:
+      return 'Completed'
+    case SessionStatus.ABANDONED:
+      return 'Abandoned'
+    default:
+      return 'Unknown'
+  }
 }

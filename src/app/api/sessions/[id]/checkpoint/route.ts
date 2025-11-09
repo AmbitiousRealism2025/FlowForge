@@ -45,7 +45,7 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
       return handleZodError(validation.error)
     }
 
-    const { checkpointText } = validation.data
+    const { checkpointNotes } = validation.data
 
     // Check if session exists and belongs to user
     const existingSession = await prisma.codingSession.findUnique({
@@ -82,7 +82,7 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
     // Append new checkpoint with timestamp
     const newCheckpoint: Checkpoint = {
       timestamp: new Date().toISOString(),
-      text: checkpointText,
+      text: checkpointNotes,
     }
     checkpoints.push(newCheckpoint)
 

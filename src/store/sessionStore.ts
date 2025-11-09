@@ -1,7 +1,7 @@
 import { create } from 'zustand'
 import { persist } from 'zustand/middleware'
 import { SessionType } from '@/types'
-import { formatDuration } from '@/lib/utils'
+import { formatHMS } from '@/lib/utils'
 
 // ============================================================================
 // Session Store Types
@@ -167,12 +167,13 @@ export const useSessionStore = create<SessionStore>()(
        */
       formattedElapsed: () => {
         const state = get()
-        return formatDuration(state.elapsedSeconds)
+        return formatHMS(state.elapsedSeconds)
       },
     }),
     {
       name: 'flowforge-session-store',
       // Only persist critical state, exclude temporary UI state
+      // Note: contextHealth is NOT persisted - it's recalculated on load
       partialize: (state) => ({
         activeSessionId: state.activeSessionId,
         sessionType: state.sessionType,
@@ -180,7 +181,6 @@ export const useSessionStore = create<SessionStore>()(
         aiModel: state.aiModel,
         startTime: state.startTime,
         elapsedSeconds: state.elapsedSeconds,
-        contextHealth: state.contextHealth,
       }),
       merge: (persistedState, currentState) => {
         const mergedState = {
@@ -191,6 +191,10 @@ export const useSessionStore = create<SessionStore>()(
         if (mergedState.startTime && typeof mergedState.startTime === 'string') {
           mergedState.startTime = new Date(mergedState.startTime)
         }
+
+        // Always initialize contextHealth to 100 on load
+        // It will be recalculated through updateContextHealth()
+        mergedState.contextHealth = 100
 
         return mergedState
       },
