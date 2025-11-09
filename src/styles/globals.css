@@ -266,6 +266,113 @@
   }
 }
 
+/* Performance Mobile Optimization Styles (Phase 2.3) */
+
+/* Battery Saver Mode - Disable Animations */
+.reduce-motion *,
+.reduce-motion *::before,
+.reduce-motion *::after {
+  animation-duration: 0.01ms !important;
+  animation-iteration-count: 1 !important;
+  transition-duration: 0.01ms !important;
+  animation-play-state: paused !important;
+}
+
+/* Touch State Feedback */
+.active-touch {
+  transform: scale(0.98);
+  opacity: 0.9;
+  transition: transform 0.05s ease-out, opacity 0.05s ease-out;
+}
+
+button.active-touch,
+[role="button"].active-touch {
+  background-color: hsl(var(--accent));
+}
+
+/* Power-Efficient Animation Transforms */
+@layer utilities {
+  .gpu-accelerated {
+    transform: translateZ(0);
+    will-change: transform;
+    backface-visibility: hidden;
+  }
+
+  .power-efficient-animation {
+    will-change: transform, opacity;
+  }
+}
+
+/* Virtual Scrolling Container */
+[data-virtual-scroll] {
+  contain: layout style paint;
+  will-change: scroll-position;
+}
+
+[data-scroll-container] {
+  contain: layout style paint;
+  will-change: scroll-position;
+}
+
+/* Touch-Optimized Animations */
+[data-animate-touch] {
+  transition: transform 0.1s ease-out;
+  will-change: transform;
+}
+
+[data-animate-touch]:active {
+  transform: scale(0.95);
+}
+
+/* Offline Indicator */
+.offline-indicator {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  background: hsl(var(--caution-amber));
+  color: hsl(var(--caution-amber-foreground));
+  padding: 0.5rem;
+  text-align: center;
+  font-size: var(--font-size-sm);
+  font-weight: 500;
+  z-index: 1000;
+  animation: slide-in-up 0.3s ease-out;
+}
+
+/* Power Saver Mode Indicator */
+.power-saver-indicator {
+  position: fixed;
+  bottom: 1rem;
+  right: 1rem;
+  background: hsl(var(--card));
+  border: 1px solid hsl(var(--border));
+  border-radius: var(--radius);
+  padding: 0.5rem 1rem;
+  font-size: var(--font-size-sm);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  z-index: 100;
+}
+
+/* Memory Pressure Warning */
+.memory-pressure-warning {
+  background: hsl(var(--stuck-red) / 0.1);
+  border-left: 4px solid hsl(var(--stuck-red));
+  padding: 1rem;
+  border-radius: var(--radius);
+  margin: 1rem 0;
+}
+
+/* Network State Indicators */
+.network-slow {
+  filter: grayscale(0.5);
+}
+
+.network-offline {
+  filter: grayscale(1);
+  opacity: 0.7;
+}
+
 /* Radix UI Component Overrides */
 /* Dialog */
 [data-radix-dialog-overlay] {
