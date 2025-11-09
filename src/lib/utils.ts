@@ -7,9 +7,6 @@ import {
   differenceInMinutes,
   differenceInSeconds,
   differenceInDays,
-  differenceInHours,
-  isAfter,
-  isBefore,
 } from 'date-fns'
 import { SessionType, SessionStatus, NoteCategory, Momentum, CodingSession } from '@/types'
 
@@ -313,7 +310,7 @@ export function getFeelsRightColor(score: number): string {
 /**
  * Format ship target date to human-readable string
  */
-export function formatShipTarget(shipTarget: Date | null | undefined): string {
+export function formatShipTarget(shipTarget: Date | string | null | undefined): string {
   if (!shipTarget) return 'No target set'
 
   const targetDate = typeof shipTarget === 'string' ? parseISO(shipTarget) : shipTarget

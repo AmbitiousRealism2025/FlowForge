@@ -3,13 +3,13 @@
 import { useState, useEffect } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import * as Select from '@radix-ui/react-select'
-import { Plus, Filter, Search, FolderKanban, TrendingUp, Package, ChevronDown } from 'lucide-react'
+import { Plus, Filter, Search, FolderKanban, TrendingUp, Package, ChevronDown, LayoutGrid, List } from 'lucide-react'
 import { Button } from '@/components/ui/Button'
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/Card'
 import { ProjectCard } from '@/components/projects/ProjectCard'
 import { CreateProjectDialog } from '@/components/projects/CreateProjectDialog'
 import { ProjectFilters, ProjectWithStats } from '@/types'
-import { fetchProjects, deleteProject } from '@/lib/projectService'
+import { fetchProjects, deleteProject, sortProjectsByMomentum } from '@/lib/projectService'
 import { useToast } from '@/hooks/useToast'
 import { formatDuration } from '@/lib/utils'
 
@@ -21,6 +21,7 @@ export default function ProjectsPage() {
   })
   const [searchInput, setSearchInput] = useState('')
   const [isDialogOpen, setIsDialogOpen] = useState(false)
+  const [view, setView] = useState<'grid' | 'list'>('grid')
 
   const { toast } = useToast()
   const queryClient = useQueryClient()
@@ -42,7 +43,7 @@ export default function ProjectsPage() {
       if (!result.success) {
         throw new Error(result.error || 'Failed to fetch projects')
       }
-      return result.data || []
+      return (result.data || []) as ProjectWithStats[]
     },
     staleTime: 30000, // 30 seconds
   })
@@ -65,11 +66,62 @@ export default function ProjectsPage() {
     },
   })
 
-  const projects = data || []
+  // Normalize and apply client-side momentum fallback + sorting when needed
+  const projects: ProjectWithStats[] = (() => {
+    const loaded = (data || []).map((project) => {
+      // Ensure date fields are Date instances when backend returns strings
+      const createdAt =
+        typeof project.createdAt === 'string' ? new Date(project.createdAt) : project.createdAt
+      const updatedAt =
+        typeof project.updatedAt === 'string' ? new Date(project.updatedAt) : project.updatedAt
+      const shipTarget =
+        project.shipTarget && typeof project.shipTarget === 'string'
+          ? new Date(project.shipTarget)
+          : project.shipTarget
+      const lastWorkedDate =
+        project.lastWorkedDate && typeof project.lastWorkedDate === 'string'
+          ? new Date(project.lastWorkedDate)
+          : project.lastWorkedDate
+
+      return {
+        ...project,
+        createdAt,
+        updatedAt,
+        shipTarget,
+        lastWorkedDate,
+      }
+    })
+
+    // If API did not provide momentum for a project, fall back to QUIET (or other heuristic)
+    const withMomentum: ProjectWithStats[] = loaded.map((project) => ({
+      ...project,
+      momentum: project.momentum || 'QUIET',
+    }))
+
+    // Apply client-side sort when sortBy is momentum (fallback behavior)
+    if (filters.sortBy === 'momentum') {
+      return sortProjectsByMomentum(withMomentum)
+    }
+
+    if (filters.sortBy === 'updatedAt') {
+      return [...withMomentum].sort((a, b) => {
+        const aTime =
+          a.updatedAt instanceof Date ? a.updatedAt.getTime() : new Date(a.updatedAt).getTime()
+        const bTime =
+          b.updatedAt instanceof Date ? b.updatedAt.getTime() : new Date(b.updatedAt).getTime()
+        return bTime - aTime
+      })
+    }
+
+    if (filters.sortBy === 'feelsRightScore') {
+      return [...withMomentum].sort((a, b) => b.feelsRightScore - a.feelsRightScore)
+    }
+
+    return withMomentum
+  })()
 
   // Calculate summary statistics
   const activeProjectsCount = projects.filter((p) => p.isActive).length
-  const totalProjects = projects.length
   const totalCodingMinutes = projects.reduce((sum, p) => sum + p.totalCodingMinutes, 0)
   const totalCodingTime = formatDuration(totalCodingMinutes * 60)
 
@@ -99,10 +151,40 @@ export default function ProjectsPage() {
       {/* Header */}
       <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
         <h1 className="text-3xl font-bold">Projects</h1>
-        <Button onClick={() => setIsDialogOpen(true)} className="gap-2">
-          <Plus className="h-4 w-4" />
-          New Project
-        </Button>
+        <div className="flex items-center gap-3">
+          {/* View Toggle */}
+          <div className="inline-flex rounded-md border border-input bg-background p-1">
+            <button
+              type="button"
+              onClick={() => setView('grid')}
+              className={`inline-flex items-center gap-1 px-2 py-1 rounded-sm text-xs ${
+                view === 'grid'
+                  ? 'bg-primary text-primary-foreground'
+                  : 'text-muted-foreground'
+              }`}
+            >
+              <LayoutGrid className="h-3 w-3" />
+              Grid
+            </button>
+            <button
+              type="button"
+              onClick={() => setView('list')}
+              className={`inline-flex items-center gap-1 px-2 py-1 rounded-sm text-xs ${
+                view === 'list'
+                  ? 'bg-primary text-primary-foreground'
+                  : 'text-muted-foreground'
+              }`}
+            >
+              <List className="h-3 w-3" />
+              List
+            </button>
+          </div>
+
+          <Button onClick={() => setIsDialogOpen(true)} className="gap-2">
+            <Plus className="h-4 w-4" />
+            New Project
+          </Button>
+        </div>
       </div>
 
       {/* Summary Stats */}
@@ -302,24 +384,50 @@ export default function ProjectsPage() {
       )}
 
       {!isLoading && !error && projects.length > 0 && (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {projects.map((project) => (
-            <ProjectCard
-              key={project.id}
-              project={project}
-              onUpdate={(project) => {
-                // Could open edit dialog here
-                console.log('Edit project:', project)
-              }}
-              onStartSession={(projectId) => {
-                toast.info('Session tracking coming soon!')
-              }}
-              onDelete={(projectId) => {
-                deleteMutation.mutate(projectId)
-              }}
-            />
-          ))}
-        </div>
+        <>
+          {view === 'grid' ? (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              {projects.map((project) => (
+                <ProjectCard
+                  key={project.id}
+                  project={project}
+                  onUpdate={() => {
+                    // Could open edit dialog here
+                    // TODO: Implement edit functionality
+                  }}
+                  onStartSession={() => {
+                    toast.info('Session tracking coming soon!')
+                  }}
+                  onDelete={(projectId) => {
+                    deleteMutation.mutate(projectId)
+                  }}
+                />
+              ))}
+            </div>
+          ) : (
+            <div className="flex flex-col gap-3">
+              {projects.map((project) => (
+                <div
+                  key={project.id}
+                  className="w-full"
+                >
+                  <ProjectCard
+                    project={project}
+                    onUpdate={() => {
+                      // TODO: Implement edit functionality
+                    }}
+                    onStartSession={() => {
+                      toast.info('Session tracking coming soon!')
+                    }}
+                    onDelete={(projectId) => {
+                      deleteMutation.mutate(projectId)
+                    }}
+                  />
+                </div>
+              ))}
+            </div>
+          )}
+        </>
       )}
 
       {/* Create Project Dialog */}
