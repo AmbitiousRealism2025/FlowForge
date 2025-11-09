@@ -1,0 +1,169 @@
+{
+  "version": "1.0.0",
+  "last_updated": "2025-11-09",
+  "platforms": {
+    "ios": {
+      "minimum_version": "14.0",
+      "target_version": "17.0",
+      "deployment_target": "14.0"
+    },
+    "android": {
+      "minimum_sdk": 22,
+      "target_sdk": 34,
+      "compile_sdk": 34
+    }
+  },
+  "ios": {
+    "flow_state_tracking": true,
+    "ai_context_monitoring": true,
+    "session_analytics": true,
+    "habit_tracking": true,
+    "offline_sync": true,
+    "push_notifications": true,
+    "haptic_feedback": true,
+    "background_processing": true,
+    "camera_integration": true,
+    "photo_library_access": true,
+    "local_notifications": true,
+    "biometric_auth": true,
+    "face_id": true,
+    "touch_id": true,
+    "app_clips": false,
+    "widgets": false,
+    "live_activities": false,
+    "dynamic_island": false
+  },
+  "android": {
+    "flow_state_tracking": true,
+    "ai_context_monitoring": true,
+    "session_analytics": true,
+    "habit_tracking": true,
+    "offline_sync": true,
+    "push_notifications": true,
+    "haptic_feedback": true,
+    "background_processing": true,
+    "camera_integration": true,
+    "photo_library_access": true,
+    "local_notifications": true,
+    "biometric_auth": true,
+    "fingerprint_auth": true,
+    "face_unlock": true,
+    "app_shortcuts": false,
+    "widgets": false,
+    "quick_settings_tile": false,
+    "picture_in_picture": false
+  },
+  "feature_parity": {
+    "core_features": {
+      "flow_state_tracking": {
+        "ios": true,
+        "android": true,
+        "notes": "Full parity across platforms"
+      },
+      "ai_context_monitoring": {
+        "ios": true,
+        "android": true,
+        "notes": "Identical AI algorithms on both platforms"
+      },
+      "session_analytics": {
+        "ios": true,
+        "android": true,
+        "notes": "Same analytics dashboard on both platforms"
+      },
+      "habit_tracking": {
+        "ios": true,
+        "android": true,
+        "notes": "Identical habit tracking features"
+      },
+      "offline_sync": {
+        "ios": true,
+        "android": true,
+        "notes": "Background sync works on both platforms"
+      },
+      "push_notifications": {
+        "ios": true,
+        "android": true,
+        "notes": "Context health alerts and reminders on both platforms"
+      },
+      "haptic_feedback": {
+        "ios": true,
+        "android": true,
+        "notes": "Flow state transitions with haptics on both platforms"
+      },
+      "background_processing": {
+        "ios": true,
+        "android": true,
+        "notes": "Background data sync and processing on both platforms"
+      }
+    },
+    "ui_differences": {
+      "navigation": "iOS uses bottom tab bar, Android uses bottom navigation with Material Design 3",
+      "status_bar": "iOS uses transparent overlay, Android uses platform-specific status bar colors",
+      "gestures": "iOS uses swipe-based navigation, Android supports both swipe and hardware back button",
+      "haptics": "iOS uses Taptic Engine, Android uses vibration API with different intensities"
+    }
+  },
+  "performance_targets": {
+    "ios": {
+      "cold_start": "<2s",
+      "hot_start": "<0.5s",
+      "memory_usage": "<100MB average",
+      "battery_impact": "Low (iOS energy impact rating)",
+      "frame_rate": "60fps steady",
+      "bundle_size": "<50MB"
+    },
+    "android": {
+      "cold_start": "<3s",
+      "hot_start": "<1s",
+      "memory_usage": "<150MB average",
+      "battery_impact": "Low (Android battery optimization compliant)",
+      "frame_rate": "60fps steady",
+      "apk_size": "<30MB",
+      "aab_size": "<40MB"
+    }
+  },
+  "future_features": {
+    "ios": {
+      "widgets": "Planned for v1.1",
+      "live_activities": "Planned for v1.2",
+      "app_clips": "Under consideration",
+      "dynamic_island": "Planned for v1.2"
+    },
+    "android": {
+      "widgets": "Planned for v1.1",
+      "quick_settings_tile": "Planned for v1.1",
+      "app_shortcuts": "Planned for v1.2",
+      "picture_in_picture": "Under consideration"
+    }
+  },
+  "testing_coverage": {
+    "ios": {
+      "unit_tests": "85%",
+      "integration_tests": "70%",
+      "ui_tests": "60%",
+      "devices_tested": ["iPhone SE (2020)", "iPhone 12", "iPhone 14 Pro", "iPad Air", "iPad Pro"]
+    },
+    "android": {
+      "unit_tests": "85%",
+      "integration_tests": "70%",
+      "ui_tests": "60%",
+      "devices_tested": ["Pixel 6", "Samsung Galaxy S21", "OnePlus 9", "Samsung Tab S8"]
+    }
+  },
+  "accessibility": {
+    "ios": {
+      "voiceover": true,
+      "dynamic_type": true,
+      "reduce_motion": true,
+      "increase_contrast": true,
+      "dark_mode": true
+    },
+    "android": {
+      "talkback": true,
+      "font_scaling": true,
+      "reduce_animations": true,
+      "high_contrast": true,
+      "dark_mode": true
+    }
+  }
+}

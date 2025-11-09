@@ -1,0 +1,78 @@
+{
+  "data_collection": {
+    "personal_info": false,
+    "financial_info": false,
+    "health_fitness": false,
+    "messages": false,
+    "photos_videos": true,
+    "audio_files": false,
+    "files_docs": true,
+    "calendar": false,
+    "contacts": false,
+    "app_activity": true,
+    "web_browsing": false,
+    "app_info_performance": true,
+    "device_machine_ids": false
+  },
+  "data_sharing": {
+    "shared_with_third_parties": false,
+    "shared_for_advertising": false,
+    "shared_for_analytics": true,
+    "user_can_control": true
+  },
+  "security_practices": {
+    "data_encrypted_in_transit": true,
+    "data_encrypted_at_rest": true,
+    "user_can_request_deletion": true,
+    "follows_families_policy": false,
+    "committed_to_play_families": false
+  },
+  "data_usage_details": {
+    "photos_videos": {
+      "collected": true,
+      "purpose": "Flow state documentation - users can optionally capture photos to document their flow state sessions",
+      "shared": false,
+      "optional": true,
+      "can_delete": true,
+      "encrypted": true
+    },
+    "files_docs": {
+      "collected": true,
+      "purpose": "AI context files - local storage of session data, project information, and productivity metrics",
+      "shared": false,
+      "optional": false,
+      "can_delete": true,
+      "encrypted": true
+    },
+    "app_activity": {
+      "collected": true,
+      "purpose": "Productivity tracking - session times, flow states, and habit tracking for personal analytics",
+      "shared": false,
+      "optional": false,
+      "can_delete": true,
+      "encrypted": true
+    },
+    "app_info_performance": {
+      "collected": true,
+      "purpose": "App performance and crash diagnostics to improve stability and user experience",
+      "shared": true,
+      "shared_with": ["Analytics providers"],
+      "optional": true,
+      "can_delete": true,
+      "encrypted": true
+    }
+  },
+  "privacy_highlights": [
+    "All data stored locally on device by default",
+    "End-to-end encryption for optional cloud sync",
+    "No advertising or tracking",
+    "User controls all data sharing",
+    "GDPR and CCPA compliant",
+    "Open source core components"
+  ],
+  "compliance": {
+    "gdpr": true,
+    "ccpa": true,
+    "coppa": false
+  }
+}

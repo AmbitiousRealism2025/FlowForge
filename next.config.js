@@ -14,6 +14,9 @@ const nextConfig = withPWA({
   swcMinify: true,
   poweredByHeader: false,
 
+  // Enable static export for Capacitor
+  output: process.env.CAPACITOR_BUILD === 'true' ? 'export' : undefined,
+
   // Performance optimizations
   compiler: {
     removeConsole: process.env.NODE_ENV === 'production',
@@ -23,6 +26,7 @@ const nextConfig = withPWA({
   images: {
     domains: [],
     formats: ['image/avif', 'image/webp'],
+    unoptimized: process.env.CAPACITOR_BUILD === 'true',
   },
 
   // Headers for security and performance
