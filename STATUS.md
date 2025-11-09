@@ -6,43 +6,39 @@
 
 ## 📍 Current Status
 
-**Current Phase**: Phase 1.2 - API Layer **COMPLETE** ✅
+**Current Phase**: Phase 1.3 - Dashboard & Layout **COMPLETE** ✅
 
-**Current Task**: Phase 1.2 implementation completed. Ready for Phase 1.3.
+**Current Task**: Phase 1.3 implementation completed. Ready for Phase 1.4.
 
-**Plan Document**: [plan-v1-:-phase-1.2:-api-layer---all-backend-routes-&-endpoints.md](plan-v1-:-phase-1.2:-api-layer---all-backend-routes-&-endpoints.md)
+**Plan Document**: [plan-v1-:-phase-1.3:-dashboard-&-layout---core-ui-structure-&-navigation.md](plan-v1-:-phase-1.3:-dashboard-&-layout---core-ui-structure-&-navigation.md)
 
 ---
 
-## 🎯 Phase 1.2 Implementation Checklist
+## 🎯 Phase 1.3 Implementation Checklist
 
-### Group 1: Shared Utilities ✅
-- [x] `src/lib/api-utils.ts` (NEW) - Shared API utilities for authentication, error handling, pagination
-- [x] `src/lib/validations.ts` (NEW) - Zod validation schemas for all API endpoints
+### Group 1: Providers & Core Components ✅
+- [x] `src/components/providers/providers.tsx` (MODIFY) - Added SessionProvider and Toaster
+- [x] `src/components/ui/Toaster.tsx` (NEW) - Toast notification component with Radix UI
+- [x] `src/components/ui/Button.tsx` (NEW) - Reusable button component with variants
+- [x] `src/components/ui/Card.tsx` (NEW) - Reusable card component with sub-components
 
-### Group 2: Dashboard API Routes ✅
-- [x] `src/app/api/dashboard/focus/route.ts` (NEW) - Today's focus text management (GET, PUT)
-- [x] `src/app/api/dashboard/stats/route.ts` (NEW) - Aggregated dashboard statistics (GET)
+### Group 2: Custom Hooks ✅
+- [x] `src/hooks/useToast.ts` (NEW) - Toast notification hook with Zustand store
+- [x] `src/hooks/useDashboardStats.ts` (NEW) - Dashboard statistics React Query hook
 
-### Group 3: Sessions API Routes ✅
-- [x] `src/app/api/sessions/route.ts` (NEW) - Sessions list and creation (GET, POST)
-- [x] `src/app/api/sessions/[id]/route.ts` (NEW) - Individual session operations (GET, PATCH, DELETE)
-- [x] `src/app/api/sessions/[id]/checkpoint/route.ts` (NEW) - Session checkpoint notes (POST)
+### Group 3: Layout Components ✅
+- [x] `src/app/(dashboard)/layout.tsx` (NEW) - Dashboard layout with server-side auth
+- [x] `src/components/layout/Sidebar.tsx` (NEW) - Desktop navigation sidebar
+- [x] `src/components/layout/MobileNav.tsx` (NEW) - Mobile bottom navigation
+- [x] `src/components/layout/UserMenu.tsx` (NEW) - User profile dropdown menu
 
-### Group 4: Projects API Routes ✅
-- [x] `src/app/api/projects/route.ts` (NEW) - Projects list and creation (GET, POST)
-- [x] `src/app/api/projects/[id]/route.ts` (NEW) - Individual project operations (GET, PATCH, DELETE)
-- [x] `src/app/api/projects/[id]/feels-right/route.ts` (NEW) - Feels-right score updates (PATCH)
-- [x] `src/app/api/projects/[id]/pivot/route.ts` (NEW) - Pivot recording (POST)
-
-### Group 5: Notes API Routes ✅
-- [x] `src/app/api/notes/route.ts` (NEW) - Notes list and creation (GET, POST)
-- [x] `src/app/api/notes/[id]/route.ts` (NEW) - Individual note operations (GET, PATCH, DELETE)
-
-### Group 6: Analytics API Routes ✅
-- [x] `src/app/api/analytics/streak/route.ts` (NEW) - Ship streak calculation (GET)
-- [x] `src/app/api/analytics/ship/route.ts` (NEW) - Mark ship today (POST)
-- [x] `src/app/api/analytics/weekly/route.ts` (NEW) - Weekly ship data (GET)
+### Group 4: Dashboard Page & Widgets ✅
+- [x] `src/app/(dashboard)/dashboard/page.tsx` (NEW) - Main dashboard page
+- [x] `src/components/dashboard/TodaysFocus.tsx` (NEW) - Daily focus text widget
+- [x] `src/components/dashboard/ActiveSession.tsx` (NEW) - Active session timer widget
+- [x] `src/components/dashboard/ShipStreak.tsx` (NEW) - Ship streak tracking widget
+- [x] `src/components/dashboard/VibeMeter.tsx` (NEW) - Flow state indicator widget
+- [x] `src/components/dashboard/QuickCapture.tsx` (NEW) - Quick note capture widget
 
 ---
 
@@ -90,14 +86,25 @@
   - Notes API routes (CRUD operations with search and filtering)
   - Analytics API routes (ship streaks, weekly data)
   - 16 complete API endpoints with consistent patterns
+- **Phase 1.3 - Dashboard & Layout** ✅
+  - Responsive dashboard layout with server-side authentication
+  - Desktop sidebar and mobile bottom navigation
+  - User profile dropdown menu with session management
+  - Reusable UI components (Button, Card, Toaster)
+  - Custom React hooks (useToast, useDashboardStats)
+  - Five dashboard widgets (TodaysFocus, ActiveSession, ShipStreak, VibeMeter, QuickCapture)
+  - Complete dashboard page with responsive grid layout
+  - 16 new components implementing core UI structure
 
-### 🔄 Next Phase: Phase 1.3 - Dashboard & Layout
+### 🔄 Next Phase: Phase 1.4 - Feature Pages & Workflows
 **Deliverables:**
-- Dashboard page and layout components
-- Navigation (sidebar, mobile nav)
-- Core UI structure
+- Session management pages and workflows
+- Project management pages
+- Notes system pages
+- Analytics dashboard
+- Complete user flows
 
-**Timeline**: Week 2-3 of 6-week MVP
+**Timeline**: Week 3-4 of 6-week MVP
 
 ### 📅 Upcoming Phases
 
@@ -128,6 +135,7 @@
 - **Completed Phase Plans**:
   - [plan-v1-:-phase-1.1:-foundation-layer---type-system,-utilities,-stores-&-services.md](plan-v1-:-phase-1.1:-foundation-layer---type-system,-utilities,-stores-&-services.md)
   - [plan-v1-:-phase-1.2:-api-layer---all-backend-routes-&-endpoints.md](plan-v1-:-phase-1.2:-api-layer---all-backend-routes-&-endpoints.md)
+  - [plan-v1-:-phase-1.3:-dashboard-&-layout---core-ui-structure-&-navigation.md](plan-v1-:-phase-1.3:-dashboard-&-layout---core-ui-structure-&-navigation.md)
 - **Project Guide**: [CLAUDE.md](CLAUDE.md)
 - **Product Requirements**: Check project documentation for full PRD
 
