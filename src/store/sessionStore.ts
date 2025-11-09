@@ -1,7 +1,9 @@
+'use client'
+
 import { create } from 'zustand'
-import { persist } from 'zustand/middleware'
+import { persist, createJSONStorage } from 'zustand/middleware'
 import { SessionType } from '@/types'
-import { formatHMS } from '@/lib/utils'
+import { formatDuration } from '@/lib/utils'
 
 // ============================================================================
 // Session Store Types
@@ -23,8 +25,8 @@ interface SessionActions {
   startSession: (
     sessionId: string,
     sessionType: SessionType,
-    projectId?: string,
-    aiModel?: string
+    projectId: string | null,
+    aiModel: string
   ) => void
   pauseSession: () => void
   resumeSession: () => void
@@ -72,8 +74,8 @@ export const useSessionStore = create<SessionStore>()(
         set({
           activeSessionId: sessionId,
           sessionType,
-          projectId: projectId || null,
-          aiModel: aiModel || null,
+          projectId,
+          aiModel,
           startTime: new Date(),
           isPaused: false,
           elapsedSeconds: 0,
@@ -167,13 +169,13 @@ export const useSessionStore = create<SessionStore>()(
        */
       formattedElapsed: () => {
         const state = get()
-        return formatHMS(state.elapsedSeconds)
+        return formatDuration(state.elapsedSeconds)
       },
     }),
     {
       name: 'flowforge-session-store',
+      storage: createJSONStorage(() => localStorage),
       // Only persist critical state, exclude temporary UI state
-      // Note: contextHealth is NOT persisted - it's recalculated on load
       partialize: (state) => ({
         activeSessionId: state.activeSessionId,
         sessionType: state.sessionType,
@@ -181,23 +183,8 @@ export const useSessionStore = create<SessionStore>()(
         aiModel: state.aiModel,
         startTime: state.startTime,
         elapsedSeconds: state.elapsedSeconds,
+        contextHealth: state.contextHealth,
       }),
-      merge: (persistedState, currentState) => {
-        const mergedState = {
-          ...currentState,
-          ...(persistedState as Partial<SessionStore>),
-        }
-
-        if (mergedState.startTime && typeof mergedState.startTime === 'string') {
-          mergedState.startTime = new Date(mergedState.startTime)
-        }
-
-        // Always initialize contextHealth to 100 on load
-        // It will be recalculated through updateContextHealth()
-        mergedState.contextHealth = 100
-
-        return mergedState
-      },
     }
   )
 )

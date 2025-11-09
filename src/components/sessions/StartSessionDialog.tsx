@@ -1,214 +1,247 @@
 'use client'
 
-import { useState, FormEvent } from 'react'
+import { useState } from 'react'
 import * as Dialog from '@radix-ui/react-dialog'
-import { Play, Loader2, Sparkles } from 'lucide-react'
-import { useMutation, useQueryClient } from '@tanstack/react-query'
+import * as Select from '@radix-ui/react-select'
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
+import { Hammer, Search, Bug, Rocket, X, ChevronDown } from 'lucide-react'
 import { Button } from '@/components/ui/Button'
-import { cn } from '@/lib/utils'
-import { SessionType, type StartSessionDialogProps, type CodingSession } from '@/types'
-import { startSession, saveCheckpoint } from '@/lib/sessionManager'
+import { SessionType, StartSessionDialogProps, Project, ApiResponse } from '@/types'
 import { useSessionStore } from '@/store/sessionStore'
+import { startSession } from '@/lib/sessionManager'
 import { useToast } from '@/hooks/useToast'
-import { useActiveProjects } from '@/hooks/useActiveProjects'
 
-const AI_MODELS = [
-  { label: 'GPT-4o mini', value: 'gpt-4o-mini' },
-  { label: 'Claude 3.5 Sonnet', value: 'claude-3-5-sonnet' },
-  { label: 'Gemini 1.5 Pro', value: 'gemini-1-5-pro' },
-  { label: 'Grok 2', value: 'grok-2' },
+const SESSION_TYPE_OPTIONS = [
+  { type: SessionType.BUILDING, icon: Hammer, label: 'Building', description: 'Creating new features' },
+  { type: SessionType.EXPLORING, icon: Search, label: 'Exploring', description: 'Research and discovery' },
+  { type: SessionType.DEBUGGING, icon: Bug, label: 'Debugging', description: 'Fixing issues' },
+  { type: SessionType.SHIPPING, icon: Rocket, label: 'Shipping', description: 'Finalizing and deploying' },
 ]
 
-const SESSION_TYPES: Record<SessionType, { label: string; description: string; icon: string }> = {
-  [SessionType.BUILDING]: { label: 'Building', description: 'Heads-down feature work', icon: '🔨' },
-  [SessionType.EXPLORING]: { label: 'Exploring', description: 'Research, prototyping, ideation', icon: '🔍' },
-  [SessionType.DEBUGGING]: { label: 'Debugging', description: 'Break/fix, investigations', icon: '🐛' },
-  [SessionType.SHIPPING]: { label: 'Shipping', description: 'Final polish & deploy', icon: '🚀' },
-}
+const AI_MODEL_OPTIONS = [
+  'Claude 3.5 Sonnet',
+  'GPT-4',
+  'Cursor',
+  'Copilot',
+  'Local Model',
+  'Other',
+]
 
-export function StartSessionDialog({
-  onSessionStarted,
-  triggerLabel = 'Start Session',
-  className,
-}: StartSessionDialogProps) {
-  const [open, setOpen] = useState(false)
-  const [sessionType, setSessionType] = useState<SessionType>(SessionType.BUILDING)
-  const [projectId, setProjectId] = useState<string>('')
-  const [aiModel, setAiModel] = useState<string>(AI_MODELS[0].value)
-  const [notes, setNotes] = useState('')
+export function StartSessionDialog({ isOpen, onClose, onSessionStarted }: StartSessionDialogProps) {
+  const [selectedType, setSelectedType] = useState<SessionType | null>(null)
+  const [selectedProject, setSelectedProject] = useState<string | null>(null)
+  const [selectedAiModel, setSelectedAiModel] = useState<string>('Claude 3.5 Sonnet')
+  const [notes, setNotes] = useState<string>('')
 
-  const { toast } = useToast()
   const queryClient = useQueryClient()
-  const { startSession: setActiveSession } = useSessionStore()
+  const startSessionStore = useSessionStore((state) => state.startSession)
+  const { toast } = useToast()
 
-  const { data: projects = [], isLoading: isLoadingProjects } = useActiveProjects(open)
+  // Fetch active projects
+  const { data: projectsData, isLoading: projectsLoading } = useQuery<ApiResponse<Project[]>>({
+    queryKey: ['projects', 'active'],
+    queryFn: async () => {
+      const response = await fetch('/api/projects?isActive=true')
+      if (!response.ok) throw new Error('Failed to fetch projects')
+      return response.json()
+    },
+    enabled: isOpen,
+  })
 
-  const resetForm = () => {
-    setSessionType(SessionType.BUILDING)
-    setProjectId('')
-    setAiModel(AI_MODELS[0].value)
-    setNotes('')
-  }
+  const projects = projectsData?.data || []
 
-  const handleDialogChange = (nextOpen: boolean) => {
-    setOpen(nextOpen)
-    if (!nextOpen) {
-      resetForm()
-    }
-  }
-
-  const handleSuccess = (session: CodingSession) => {
-    setActiveSession(session.id, session.sessionType, session.projectId, session.aiModelsUsed[0] ?? aiModel)
-    queryClient.invalidateQueries({ queryKey: ['sessions'] })
-    onSessionStarted?.(session)
-    toast.success('Session started successfully')
-    handleDialogChange(false)
-  }
-
+  // Start session mutation
   const startSessionMutation = useMutation({
     mutationFn: async () => {
-      const result = await startSession(sessionType, projectId || null, aiModel, '')
-
-      if (!result.success || !result.data) {
-        throw new Error(result.error || 'Failed to start session')
-      }
-
-      if (notes.trim()) {
-        await saveCheckpoint(result.data.id, notes.trim())
-      }
-
-      return result.data
+      if (!selectedType) throw new Error('Session type is required')
+      // Get userId from session - for now we'll let the API handle it
+      return startSession(selectedType, selectedProject, selectedAiModel, '')
     },
-    onSuccess: handleSuccess,
-    onError: (error: unknown) => {
-      const message = error instanceof Error ? error.message : 'Failed to start session'
-      toast.error(message)
+    onSuccess: (response) => {
+      if (response.success && response.data) {
+        // Update client store
+        startSessionStore(
+          response.data.id,
+          response.data.sessionType,
+          response.data.projectId || null,
+          selectedAiModel
+        )
+
+        // Invalidate sessions query
+        queryClient.invalidateQueries({ queryKey: ['sessions'] })
+
+        // Show success toast
+        toast.success('Session started successfully!')
+
+        // Call callback
+        if (onSessionStarted) {
+          onSessionStarted(response.data)
+        }
+
+        // Reset form
+        setSelectedType(null)
+        setSelectedProject(null)
+        setSelectedAiModel('Claude 3.5 Sonnet')
+        setNotes('')
+
+        // Close dialog
+        onClose()
+      } else {
+        throw new Error(response.error || 'Failed to start session')
+      }
+    },
+    onError: (error: Error) => {
+      toast.error(error.message || 'Failed to start session')
     },
   })
 
-  const handleSubmit = (event: FormEvent) => {
-    event.preventDefault()
+  const handleStartSession = () => {
+    if (!selectedType) {
+      toast.error('Please select a session type')
+      return
+    }
     startSessionMutation.mutate()
   }
 
   return (
-    <Dialog.Root open={open} onOpenChange={handleDialogChange}>
-      <Dialog.Trigger asChild>
-        <Button className={className} size="sm">
-          <Play className="mr-2 h-4 w-4" />
-          {triggerLabel}
-        </Button>
-      </Dialog.Trigger>
-
+    <Dialog.Root open={isOpen} onOpenChange={onClose}>
       <Dialog.Portal>
-        <Dialog.Overlay className="fixed inset-0 z-50 bg-background/80 backdrop-blur-sm data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0" />
-        <Dialog.Content className="fixed left-1/2 top-1/2 z-50 w-full max-w-xl -translate-x-1/2 -translate-y-1/2 rounded-xl border bg-card p-6 shadow-lg focus:outline-none">
-          <Dialog.Title className="text-2xl font-semibold flex items-center gap-2">
-            <Sparkles className="h-5 w-5 text-primary" />
-            Launch a Focus Block
-          </Dialog.Title>
-          <Dialog.Description className="mt-1 text-sm text-muted-foreground">
-            Pick your session type, link a project, and prime your AI co-pilot.
+        <Dialog.Overlay className="fixed inset-0 bg-black/50 data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0" />
+        <Dialog.Content className="fixed left-[50%] top-[50%] z-50 w-full max-w-lg translate-x-[-50%] translate-y-[-50%] gap-4 border bg-background p-6 shadow-lg duration-200 data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95 data-[state=closed]:slide-out-to-left-1/2 data-[state=closed]:slide-out-to-top-[48%] data-[state=open]:slide-in-from-left-1/2 data-[state=open]:slide-in-from-top-[48%] sm:rounded-lg">
+          <div className="flex items-center justify-between">
+            <Dialog.Title className="text-lg font-semibold">
+              Start New Session
+            </Dialog.Title>
+            <Dialog.Close asChild>
+              <button
+                className="rounded-sm opacity-70 ring-offset-background transition-opacity hover:opacity-100 focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2"
+                aria-label="Close"
+              >
+                <X className="h-4 w-4" />
+              </button>
+            </Dialog.Close>
+          </div>
+
+          <Dialog.Description className="text-sm text-muted-foreground">
+            Choose your session type and get started with your coding flow
           </Dialog.Description>
 
-          <form className="mt-6 space-y-6" onSubmit={handleSubmit}>
-            <div className="space-y-3">
-              <p className="text-sm font-medium">Session Type</p>
-              <div className="grid gap-3 sm:grid-cols-2">
-                {Object.values(SessionType).map((type) => {
-                  const details = SESSION_TYPES[type]
-                  const isActive = sessionType === type
-
-                  return (
-                    <button
-                      key={type}
-                      type="button"
-                      onClick={() => setSessionType(type)}
-                      className={cn(
-                        'rounded-lg border px-4 py-3 text-left transition hover:border-primary',
-                        isActive ? 'border-primary bg-primary/10' : 'border-border'
-                      )}
-                    >
-                      <span className="text-2xl" aria-hidden>
-                        {details.icon}
-                      </span>
-                      <div className="mt-2">
-                        <p className="font-semibold">{details.label}</p>
-                        <p className="text-sm text-muted-foreground">{details.description}</p>
-                      </div>
-                    </button>
-                  )
-                })}
+          <div className="space-y-6">
+            {/* Session Type Selector */}
+            <div className="space-y-2">
+              <label className="text-sm font-medium">Session Type *</label>
+              <div className="grid grid-cols-2 gap-3">
+                {SESSION_TYPE_OPTIONS.map(({ type, icon: Icon, label, description }) => (
+                  <button
+                    key={type}
+                    onClick={() => setSelectedType(type)}
+                    className={`flex flex-col items-start gap-2 rounded-lg border-2 p-4 transition-all hover:border-primary/50 ${
+                      selectedType === type
+                        ? 'border-primary bg-primary/5'
+                        : 'border-border bg-card'
+                    }`}
+                  >
+                    <Icon className="h-5 w-5" />
+                    <div className="text-left">
+                      <div className="font-medium">{label}</div>
+                      <div className="text-xs text-muted-foreground">{description}</div>
+                    </div>
+                  </button>
+                ))}
               </div>
             </div>
 
-            <div className="grid gap-4 sm:grid-cols-2">
-              <label className="flex flex-col gap-2 text-sm font-medium">
-                Project (optional)
-                <select
-                  value={projectId}
-                  onChange={(event) => setProjectId(event.target.value)}
-                  disabled={isLoadingProjects}
-                  className="w-full rounded-md border bg-background px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary"
-                >
-                  <option value="">No project</option>
-                  {projects.map((project) => (
-                    <option key={project.id} value={project.id}>
-                      {project.name}
-                    </option>
-                  ))}
-                </select>
-              </label>
-
-              <label className="flex flex-col gap-2 text-sm font-medium">
-                AI Model
-                <select
-                  value={aiModel}
-                  onChange={(event) => setAiModel(event.target.value)}
-                  className="w-full rounded-md border bg-background px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary"
-                >
-                  {AI_MODELS.map((model) => (
-                    <option key={model.value} value={model.value}>
-                      {model.label}
-                    </option>
-                  ))}
-                </select>
-              </label>
+            {/* Project Selector */}
+            <div className="space-y-2">
+              <label className="text-sm font-medium">Project (Optional)</label>
+              <Select.Root value={selectedProject || 'none'} onValueChange={(value) => setSelectedProject(value === 'none' ? null : value)}>
+                <Select.Trigger className="flex h-10 w-full items-center justify-between rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50">
+                  <Select.Value placeholder="No project" />
+                  <Select.Icon>
+                    <ChevronDown className="h-4 w-4 opacity-50" />
+                  </Select.Icon>
+                </Select.Trigger>
+                <Select.Portal>
+                  <Select.Content className="relative z-50 min-w-[8rem] overflow-hidden rounded-md border bg-popover text-popover-foreground shadow-md data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95">
+                    <Select.Viewport className="p-1">
+                      <Select.Item
+                        value="none"
+                        className="relative flex w-full cursor-pointer select-none items-center rounded-sm py-1.5 pl-8 pr-2 text-sm outline-none focus:bg-accent focus:text-accent-foreground data-[disabled]:pointer-events-none data-[disabled]:opacity-50"
+                      >
+                        <Select.ItemText>No project</Select.ItemText>
+                      </Select.Item>
+                      {projectsLoading ? (
+                        <div className="py-2 text-center text-sm text-muted-foreground">Loading...</div>
+                      ) : (
+                        projects.map((project) => (
+                          <Select.Item
+                            key={project.id}
+                            value={project.id}
+                            className="relative flex w-full cursor-pointer select-none items-center rounded-sm py-1.5 pl-8 pr-2 text-sm outline-none focus:bg-accent focus:text-accent-foreground data-[disabled]:pointer-events-none data-[disabled]:opacity-50"
+                          >
+                            <Select.ItemText>{project.name}</Select.ItemText>
+                          </Select.Item>
+                        ))
+                      )}
+                    </Select.Viewport>
+                  </Select.Content>
+                </Select.Portal>
+              </Select.Root>
             </div>
 
-            <label className="flex flex-col gap-2 text-sm font-medium">
-              Session Notes (optional)
+            {/* AI Model Selector */}
+            <div className="space-y-2">
+              <label className="text-sm font-medium">AI Model</label>
+              <Select.Root value={selectedAiModel} onValueChange={setSelectedAiModel}>
+                <Select.Trigger className="flex h-10 w-full items-center justify-between rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50">
+                  <Select.Value />
+                  <Select.Icon>
+                    <ChevronDown className="h-4 w-4 opacity-50" />
+                  </Select.Icon>
+                </Select.Trigger>
+                <Select.Portal>
+                  <Select.Content className="relative z-50 min-w-[8rem] overflow-hidden rounded-md border bg-popover text-popover-foreground shadow-md data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95">
+                    <Select.Viewport className="p-1">
+                      {AI_MODEL_OPTIONS.map((model) => (
+                        <Select.Item
+                          key={model}
+                          value={model}
+                          className="relative flex w-full cursor-pointer select-none items-center rounded-sm py-1.5 pl-8 pr-2 text-sm outline-none focus:bg-accent focus:text-accent-foreground data-[disabled]:pointer-events-none data-[disabled]:opacity-50"
+                        >
+                          <Select.ItemText>{model}</Select.ItemText>
+                        </Select.Item>
+                      ))}
+                    </Select.Viewport>
+                  </Select.Content>
+                </Select.Portal>
+              </Select.Root>
+            </div>
+
+            {/* Optional Notes */}
+            <div className="space-y-2">
+              <label className="text-sm font-medium">Initial Notes (Optional)</label>
               <textarea
                 value={notes}
-                onChange={(event) => setNotes(event.target.value)}
-                placeholder="What do you want to accomplish in this block?"
-                maxLength={2000}
-                className="min-h-[100px] rounded-md border bg-background p-3 text-sm focus:outline-none focus:ring-2 focus:ring-primary"
+                onChange={(e) => setNotes(e.target.value)}
+                placeholder="Add any context or goals for this session..."
+                className="flex min-h-[80px] w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+                rows={3}
               />
-              <span className="text-xs text-muted-foreground text-right">{notes.length}/2000</span>
-            </label>
-
-            <div className="flex justify-end gap-2">
-              <Dialog.Close asChild>
-                <Button type="button" variant="outline" disabled={startSessionMutation.isPending}>
-                  Cancel
-                </Button>
-              </Dialog.Close>
-              <Button type="submit" disabled={startSessionMutation.isPending}>
-                {startSessionMutation.isPending ? (
-                  <>
-                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                    Starting...
-                  </>
-                ) : (
-                  <>
-                    <Play className="mr-2 h-4 w-4" />
-                    Start Session
-                  </>
-                )}
-              </Button>
             </div>
-          </form>
+          </div>
+
+          {/* Footer Actions */}
+          <div className="flex justify-end gap-3">
+            <Button variant="outline" onClick={onClose}>
+              Cancel
+            </Button>
+            <Button
+              onClick={handleStartSession}
+              disabled={!selectedType || startSessionMutation.isPending}
+            >
+              {startSessionMutation.isPending ? 'Starting...' : 'Start Session'}
+            </Button>
+          </div>
         </Dialog.Content>
       </Dialog.Portal>
     </Dialog.Root>

@@ -5,10 +5,14 @@ import {
   CreateSessionRequest,
   UpdateSessionRequest,
   ApiResponse,
-  PaginatedResponse,
 } from '@/types'
-import { parseISO } from 'date-fns'
-import { formatDuration, calculateDuration } from '@/lib/utils'
+import {
+  formatDuration,
+  calculateDuration,
+  getSessionTypeIcon,
+  getSessionTypeLabel,
+  getSessionStatusLabel,
+} from '@/lib/utils'
 
 // ============================================================================
 // Constants
@@ -60,6 +64,49 @@ export async function startSession(
       data: session,
       error: null,
       message: 'Session started successfully',
+    }
+  } catch (error) {
+    return {
+      success: false,
+      data: null,
+      error: handleSessionError(error),
+      message: null,
+    }
+  }
+}
+
+/**
+ * Update session with partial data
+ */
+export async function updateSession(
+  sessionId: string,
+  data: UpdateSessionRequest
+): Promise<ApiResponse<CodingSession>> {
+  try {
+    const response = await fetch(`${API_BASE_URL}/${sessionId}`, {
+      method: 'PATCH',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(data),
+    })
+
+    if (!response.ok) {
+      const error = await response.json()
+      return {
+        success: false,
+        data: null,
+        error: error.message || 'Failed to update session',
+        message: null,
+      }
+    }
+
+    const session = await response.json()
+    return {
+      success: true,
+      data: session,
+      error: null,
+      message: 'Session updated successfully',
     }
   } catch (error) {
     return {
@@ -262,11 +309,31 @@ export async function updateSessionDuration(
 }
 
 /**
+ * Sync session duration with server (background sync)
+ * Returns boolean indicating success - errors are logged but not thrown
+ */
+export async function syncSessionDuration(
+  sessionId: string,
+  durationSeconds: number
+): Promise<boolean> {
+  try {
+    const result = await updateSession(sessionId, { durationSeconds })
+    if (!result.success) {
+      console.error('Failed to sync session duration:', result.error)
+    }
+    return result.success
+  } catch (error) {
+    console.error('Error syncing session duration:', error)
+    return false
+  }
+}
+
+/**
  * Save a checkpoint note to the session
  */
 export async function saveCheckpoint(
   sessionId: string,
-  checkpointNotes: string
+  checkpointText: string
 ): Promise<ApiResponse<CodingSession>> {
   try {
     const response = await fetch(`${API_BASE_URL}/${sessionId}/checkpoint`, {
@@ -274,7 +341,7 @@ export async function saveCheckpoint(
       headers: {
         'Content-Type': 'application/json',
       },
-      body: JSON.stringify({ checkpointNotes }),
+      body: JSON.stringify({ checkpoint: checkpointText }),
     })
 
     if (!response.ok) {
@@ -293,146 +360,6 @@ export async function saveCheckpoint(
       data: session,
       error: null,
       message: 'Checkpoint saved successfully',
-    }
-  } catch (error) {
-    return {
-      success: false,
-      data: null,
-      error: handleSessionError(error),
-      message: null,
-    }
-  }
-}
-
-/**
- * Fetch sessions with optional filters and pagination
- */
-export async function fetchSessions(params?: {
-  page?: number
-  limit?: number
-  sessionType?: SessionType
-  projectId?: string
-  startDate?: Date
-  endDate?: Date
-}): Promise<PaginatedResponse<CodingSession>> {
-  try {
-    const queryParams = new URLSearchParams()
-
-    if (params?.page !== undefined) queryParams.set('page', params.page.toString())
-    if (params?.limit !== undefined) queryParams.set('limit', params.limit.toString())
-    if (params?.sessionType) queryParams.set('sessionType', params.sessionType)
-    if (params?.projectId) queryParams.set('projectId', params.projectId)
-    if (params?.startDate) queryParams.set('startDate', params.startDate.toISOString())
-    if (params?.endDate) queryParams.set('endDate', params.endDate.toISOString())
-
-    const url = queryParams.toString()
-      ? `${API_BASE_URL}?${queryParams.toString()}`
-      : API_BASE_URL
-
-    const response = await fetch(url, {
-      method: 'GET',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-    })
-
-    if (!response.ok) {
-      const error = await response.json()
-      return {
-        success: false,
-        data: null,
-        error: error.message || 'Failed to fetch sessions',
-        message: null,
-        total: 0,
-        page: params?.page || 1,
-        limit: params?.limit || 10,
-        hasMore: false,
-      }
-    }
-
-    const result = await response.json()
-    const payload = result.data || {}
-
-    const itemsSource = Array.isArray(payload.items)
-      ? payload.items
-      : Array.isArray(result.sessions)
-        ? result.sessions
-        : Array.isArray(result.data)
-          ? result.data
-          : []
-
-    const normalizedSessions: CodingSession[] = (itemsSource as CodingSession[]).map((session) => ({
-      ...session,
-      startedAt: typeof session.startedAt === 'string' ? parseISO(session.startedAt) : session.startedAt,
-      endedAt: session.endedAt
-        ? typeof session.endedAt === 'string'
-          ? parseISO(session.endedAt)
-          : session.endedAt
-        : undefined,
-    }))
-
-    const total = payload.total ?? result.total ?? normalizedSessions.length
-    const pageValue = payload.page ?? result.page ?? params?.page ?? 1
-    const limitValue = payload.limit ?? result.limit ?? params?.limit ?? 10
-    const hasMore = payload.hasMore ?? result.hasMore ?? pageValue * limitValue < total
-
-    return {
-      success: true,
-      data: normalizedSessions,
-      error: null,
-      message: null,
-      total,
-      page: pageValue,
-      limit: limitValue,
-      hasMore,
-    }
-  } catch (error) {
-    return {
-      success: false,
-      data: null,
-      error: handleSessionError(error),
-      message: null,
-      total: 0,
-      page: params?.page || 1,
-      limit: params?.limit || 10,
-      hasMore: false,
-    }
-  }
-}
-
-/**
- * Delete a session by ID
- */
-export async function deleteSession(sessionId: string): Promise<ApiResponse<{ id: string } | null>> {
-  try {
-    const response = await fetch(`${API_BASE_URL}/${sessionId}`, {
-      method: 'DELETE',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-    })
-
-    if (!response.ok) {
-      const error = await response.json()
-      return {
-        success: false,
-        data: null,
-        error: error.message || 'Failed to delete session',
-        message: null,
-      }
-    }
-
-    // Handle both no-content and JSON responses
-    const contentType = response.headers.get('content-type')
-    const data = contentType?.includes('application/json')
-      ? await response.json()
-      : { id: sessionId }
-
-    return {
-      success: true,
-      data,
-      error: null,
-      message: 'Session deleted successfully',
     }
   } catch (error) {
     return {
@@ -465,13 +392,9 @@ export function calculateContextHealth(
  * Get session duration in seconds
  */
 export function getSessionDuration(session: CodingSession): number {
-  const startedAt = typeof session.startedAt === 'string' ? parseISO(session.startedAt) : session.startedAt
-
   if (session.endedAt) {
-    const endedAt = typeof session.endedAt === 'string' ? parseISO(session.endedAt) : session.endedAt
-    return calculateDuration(startedAt, endedAt)
+    return calculateDuration(session.startedAt, session.endedAt)
   }
-
   return session.durationSeconds
 }
 
@@ -483,6 +406,40 @@ export function formatSessionDuration(session: CodingSession): string {
   return formatDuration(duration)
 }
 
+/**
+ * Format session info for display in SessionCard
+ */
+export function formatSessionInfo(session: CodingSession): {
+  duration: string
+  typeIcon: string
+  typeLabel: string
+  statusLabel: string
+} {
+  return {
+    duration: formatSessionDuration(session),
+    typeIcon: getSessionTypeIcon(session.sessionType),
+    typeLabel: getSessionTypeLabel(session.sessionType),
+    statusLabel: getSessionStatusLabel(session.sessionStatus),
+  }
+}
+
+/**
+ * Get human-readable session status
+ */
+export function getSessionStatus(session: CodingSession): string {
+  switch (session.sessionStatus) {
+    case SessionStatus.ACTIVE:
+      return 'In Progress'
+    case SessionStatus.PAUSED:
+      return 'Paused'
+    case SessionStatus.COMPLETED:
+      return 'Completed'
+    case SessionStatus.ABANDONED:
+      return 'Abandoned'
+    default:
+      return 'Unknown'
+  }
+}
 
 // ============================================================================
 // Validation Functions

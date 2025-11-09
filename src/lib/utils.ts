@@ -5,8 +5,9 @@ import {
   formatDistanceToNow,
   parseISO,
   differenceInMinutes,
+  differenceInSeconds,
 } from 'date-fns'
-import { SessionType, NoteCategory, Momentum, CodingSession, SessionStatus } from '@/types'
+import { SessionType, SessionStatus, NoteCategory, Momentum, CodingSession } from '@/types'
 
 // ============================================================================
 // Class Name Utilities
@@ -23,20 +24,6 @@ export function cn(...inputs: ClassValue[]) {
 // ============================================================================
 // Date & Time Utilities
 // ============================================================================
-
-/**
- * Format duration in seconds to HH:MM:SS format (zero-padded)
- * Used for session timers and precise duration display
- */
-export function formatHMS(seconds: number): string {
-  const hours = Math.floor(seconds / 3600)
-  const minutes = Math.floor((seconds % 3600) / 60)
-  const secs = Math.floor(seconds % 60)
-
-  const pad = (num: number) => num.toString().padStart(2, '0')
-
-  return `${pad(hours)}:${pad(minutes)}:${pad(secs)}`
-}
 
 /**
  * Format duration in seconds to human-readable string
@@ -109,6 +96,22 @@ export function formatRelativeTime(date: Date | string): string {
   }
 
   return formatDistanceToNow(dateObj, { addSuffix: true })
+}
+
+/**
+ * Format session duration from CodingSession object
+ */
+export function formatSessionDuration(session: CodingSession): string {
+  let durationSeconds = session.durationSeconds
+
+  // If session has ended, calculate duration from timestamps
+  if (session.endedAt && session.startedAt) {
+    const startDate = typeof session.startedAt === 'string' ? parseISO(session.startedAt) : session.startedAt
+    const endDate = typeof session.endedAt === 'string' ? parseISO(session.endedAt) : session.endedAt
+    durationSeconds = differenceInSeconds(endDate, startDate)
+  }
+
+  return formatDuration(durationSeconds)
 }
 
 /**
@@ -224,18 +227,18 @@ export function getMomentumColor(momentum: Momentum): string {
 }
 
 /**
- * Get Tailwind color class for session type
+ * Get emoji icon for session type
  */
-export function getSessionTypeColor(sessionType: SessionType): string {
+export function getSessionTypeIcon(sessionType: SessionType): string {
   switch (sessionType) {
     case SessionType.BUILDING:
-      return 'text-blue-500'
+      return '🔨'
     case SessionType.EXPLORING:
-      return 'text-purple-500'
+      return '🔍'
     case SessionType.DEBUGGING:
-      return 'text-red-500'
+      return '🐛'
     case SessionType.SHIPPING:
-      return 'text-green-500'
+      return '🚀'
   }
 }
 
@@ -256,28 +259,42 @@ export function getSessionTypeLabel(sessionType: SessionType): string {
 }
 
 /**
- * Get icon/emoji for session type
+ * Get Tailwind color class for session type
  */
-export function getSessionTypeIcon(sessionType: SessionType): string {
+export function getSessionTypeColor(sessionType: SessionType): string {
   switch (sessionType) {
     case SessionType.BUILDING:
-      return '🔨'
+      return 'text-blue-500'
     case SessionType.EXPLORING:
-      return '🔍'
+      return 'text-purple-500'
     case SessionType.DEBUGGING:
-      return '🐛'
+      return 'text-red-500'
     case SessionType.SHIPPING:
-      return '🚀'
-    default:
-      return '💻'
+      return 'text-green-500'
+  }
+}
+
+/**
+ * Get Tailwind color class for session status
+ */
+export function getSessionStatusColor(status: SessionStatus): string {
+  switch (status) {
+    case SessionStatus.ACTIVE:
+      return 'text-green-500'
+    case SessionStatus.PAUSED:
+      return 'text-yellow-500'
+    case SessionStatus.COMPLETED:
+      return 'text-gray-500'
+    case SessionStatus.ABANDONED:
+      return 'text-red-500'
   }
 }
 
 /**
  * Get human-readable label for session status
  */
-export function getSessionStatusLabel(sessionStatus: SessionStatus): string {
-  switch (sessionStatus) {
+export function getSessionStatusLabel(status: SessionStatus): string {
+  switch (status) {
     case SessionStatus.ACTIVE:
       return 'In Progress'
     case SessionStatus.PAUSED:
@@ -287,31 +304,6 @@ export function getSessionStatusLabel(sessionStatus: SessionStatus): string {
     case SessionStatus.ABANDONED:
       return 'Abandoned'
   }
-}
-
-/**
- * Get Tailwind color class for session status
- */
-export function getSessionStatusColor(sessionStatus: SessionStatus): string {
-  switch (sessionStatus) {
-    case SessionStatus.ACTIVE:
-      return 'text-flow-green'
-    case SessionStatus.PAUSED:
-      return 'text-caution-amber'
-    case SessionStatus.COMPLETED:
-      return 'text-blue-500'
-    case SessionStatus.ABANDONED:
-      return 'text-stuck-red'
-  }
-}
-
-/**
- * Calculate context health color based on health percentage
- */
-export function calculateContextHealthColor(health: number): string {
-  if (health >= 70) return 'text-flow-green'
-  if (health >= 40) return 'text-caution-amber'
-  return 'text-stuck-red'
 }
 
 /**
@@ -366,6 +358,32 @@ export function getFlowStateColor(
   return colorMap[colorKey][variant]
 }
 
+/**
+ * Calculate context health color classes based on health value (0-100)
+ * Returns object with textColor and bgColor for UI components
+ */
+export function calculateContextHealthColor(health: number): {
+  textColor: string
+  bgColor: string
+} {
+  if (health >= 70) {
+    return {
+      textColor: 'text-flow-green',
+      bgColor: 'bg-flow-green',
+    }
+  } else if (health >= 40) {
+    return {
+      textColor: 'text-caution-amber',
+      bgColor: 'bg-caution-amber',
+    }
+  } else {
+    return {
+      textColor: 'text-stuck-red',
+      bgColor: 'bg-stuck-red',
+    }
+  }
+}
+
 // ============================================================================
 // Array Utilities
 // ============================================================================
@@ -406,26 +424,4 @@ export function calculatePercentage(
   if (total === 0) return 0
   const percentage = (value / total) * 100
   return Number(percentage.toFixed(decimalPlaces))
-}
-
-// ============================================================================
-// Session Display Utilities (moved from sessionManager)
-// ============================================================================
-
-/**
- * Get human-readable session status
- */
-export function getSessionStatus(session: CodingSession): string {
-  switch (session.sessionStatus) {
-    case SessionStatus.ACTIVE:
-      return 'In Progress'
-    case SessionStatus.PAUSED:
-      return 'Paused'
-    case SessionStatus.COMPLETED:
-      return 'Completed'
-    case SessionStatus.ABANDONED:
-      return 'Abandoned'
-    default:
-      return 'Unknown'
-  }
 }

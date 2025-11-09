@@ -1,327 +1,368 @@
 'use client'
 
-import { useMemo, useState } from 'react'
-import { useQuery } from '@tanstack/react-query'
-import { SessionTimer } from '@/components/sessions/SessionTimer'
-import { StartSessionDialog } from '@/components/sessions/StartSessionDialog'
-import { SessionCard } from '@/components/sessions/SessionCard'
+import { useState } from 'react'
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
+import * as Select from '@radix-ui/react-select'
+import { Plus, Filter, Calendar, Clock, ChevronDown } from 'lucide-react'
 import { Button } from '@/components/ui/Button'
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/Card'
+import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/Card'
+import { SessionCard } from '@/components/sessions/SessionCard'
+import { StartSessionDialog } from '@/components/sessions/StartSessionDialog'
 import {
-  SessionStatus,
   SessionType,
-  type CodingSessionWithProject,
+  SessionFilters,
+  CodingSession,
+  ApiResponse,
+  PaginatedResponse,
+  Project,
 } from '@/types'
-import { getSessionDuration } from '@/lib/sessionManager'
 import { formatDuration } from '@/lib/utils'
-import { useActiveProjects } from '@/hooks/useActiveProjects'
-import { useSessionStore } from '@/store/sessionStore'
-
-const PAGE_SIZE = 6
-
-interface SessionsQueryParams {
-  page: number
-  limit: number
-  sessionType?: SessionType
-  projectId?: string
-  startDate?: string
-  endDate?: string
-}
-
-interface PaginatedSessions {
-  items: CodingSessionWithProject[]
-  total: number
-  page: number
-  limit: number
-  hasMore: boolean
-}
-
-async function fetchSessionsList(params: SessionsQueryParams): Promise<PaginatedSessions> {
-  const searchParams = new URLSearchParams()
-  searchParams.set('page', params.page.toString())
-  searchParams.set('limit', params.limit.toString())
-  if (params.sessionType) searchParams.set('sessionType', params.sessionType)
-  if (params.projectId) searchParams.set('projectId', params.projectId)
-  if (params.startDate) searchParams.set('startDate', params.startDate)
-  if (params.endDate) searchParams.set('endDate', params.endDate)
-
-  const response = await fetch(`/api/sessions?${searchParams.toString()}`)
-
-  if (!response.ok) {
-    throw new Error('Failed to fetch sessions')
-  }
-
-  const json = await response.json()
-  const payload = json.data || { items: [] }
-  const items = Array.isArray(payload.items) ? (payload.items as CodingSessionWithProject[]) : []
-
-  const normalizedItems: CodingSessionWithProject[] = items.map((session) => ({
-    ...session,
-    startedAt: typeof session.startedAt === 'string' ? new Date(session.startedAt) : session.startedAt,
-    endedAt: session.endedAt ? (typeof session.endedAt === 'string' ? new Date(session.endedAt) : session.endedAt) : undefined,
-  }))
-
-  return {
-    items: normalizedItems,
-    total: payload.total ?? normalizedItems.length,
-    page: payload.page ?? params.page,
-    limit: payload.limit ?? params.limit,
-    hasMore: payload.hasMore ?? params.page * params.limit < (payload.total ?? normalizedItems.length),
-  }
-}
+import { useToast } from '@/hooks/useToast'
 
 export default function SessionsPage() {
+  const [filters, setFilters] = useState<SessionFilters>({})
+  const [isDialogOpen, setIsDialogOpen] = useState(false)
   const [page, setPage] = useState(1)
-  const [sessionTypeFilter, setSessionTypeFilter] = useState<'ALL' | SessionType>('ALL')
-  const [projectFilter, setProjectFilter] = useState<'ALL' | string>('ALL')
-  const [startDate, setStartDate] = useState('')
-  const [endDate, setEndDate] = useState('')
+  const limit = 20
 
-  const { projectId: activeProjectId } = useSessionStore((state) => ({ projectId: state.projectId }))
-  const { data: activeProjects = [] } = useActiveProjects()
-  const activeProjectName = useMemo(() => {
-    if (!activeProjectId) return null
-    return activeProjects.find((project) => project.id === activeProjectId)?.name ?? null
-  }, [activeProjectId, activeProjects])
+  const queryClient = useQueryClient()
+  const { toast } = useToast()
 
-  const sessionsQuery = useQuery({
-    queryKey: [
-      'sessions',
-      {
-        page,
-        limit: PAGE_SIZE,
-        sessionType: sessionTypeFilter,
-        projectId: projectFilter,
-        startDate,
-        endDate,
-      },
-    ],
-    queryFn: () =>
-      fetchSessionsList({
-        page,
-        limit: PAGE_SIZE,
-        sessionType: sessionTypeFilter === 'ALL' ? undefined : sessionTypeFilter,
-        projectId: projectFilter === 'ALL' ? undefined : projectFilter,
-        startDate: startDate || undefined,
-        endDate: endDate || undefined,
-      }),
-    keepPreviousData: true,
+  // Fetch sessions with filters
+  const {
+    data: sessionsData,
+    isLoading: sessionsLoading,
+    error: sessionsError,
+  } = useQuery<PaginatedResponse<CodingSession>>({
+    queryKey: ['sessions', page, limit, filters],
+    queryFn: async () => {
+      const params = new URLSearchParams({
+        page: page.toString(),
+        limit: limit.toString(),
+      })
+
+      if (filters.sessionType) {
+        params.append('sessionType', filters.sessionType)
+      }
+      if (filters.projectId) {
+        params.append('projectId', filters.projectId)
+      }
+      if (filters.dateRange) {
+        params.append('startDate', filters.dateRange.start.toISOString())
+        params.append('endDate', filters.dateRange.end.toISOString())
+      }
+
+      const response = await fetch(`/api/sessions?${params.toString()}`)
+      if (!response.ok) throw new Error('Failed to fetch sessions')
+      return response.json()
+    },
   })
 
-  const { data, isLoading, isError, refetch } = sessionsQuery
-  const sessions = useMemo(() => data?.items ?? [], [data?.items])
+  // Fetch projects for filter
+  const { data: projectsData } = useQuery<ApiResponse<Project[]>>({
+    queryKey: ['projects', 'active'],
+    queryFn: async () => {
+      const response = await fetch('/api/projects?isActive=true')
+      if (!response.ok) throw new Error('Failed to fetch projects')
+      return response.json()
+    },
+  })
 
-  const summary = useMemo(() => {
-    if (!sessions.length) {
-      return {
-        totalDurationSeconds: 0,
-        avgDurationLabel: '0m',
-        activeCount: 0,
-        uniqueModels: 0,
-      }
-    }
+  const sessions = sessionsData?.data || []
+  const total = sessionsData?.total || 0
+  const hasMore = sessionsData?.hasMore || false
+  const projects = projectsData?.data || []
 
-    const totalDurationSeconds = sessions.reduce((acc, session) => acc + getSessionDuration(session), 0)
-    const avgDurationSeconds = totalDurationSeconds / sessions.length || 0
-    const activeCount = sessions.filter((session) => session.sessionStatus === SessionStatus.ACTIVE).length
-    const uniqueModels = new Set(sessions.flatMap((session) => session.aiModelsUsed)).size
+  // Calculate summary statistics
+  const totalSessions = sessions.length
+  const totalCodingMinutes = sessions.reduce((sum, s) => sum + s.durationSeconds / 60, 0)
+  const averageSessionDuration =
+    totalSessions > 0 ? totalCodingMinutes / totalSessions : 0
 
-    return {
-      totalDurationSeconds,
-      avgDurationLabel: formatDuration(Math.round(avgDurationSeconds)),
-      activeCount,
-      uniqueModels,
-    }
-  }, [sessions])
+  // Delete session mutation
+  const deleteMutation = useMutation({
+    mutationFn: async (sessionId: string) => {
+      const response = await fetch(`/api/sessions/${sessionId}`, {
+        method: 'DELETE',
+      })
+      if (!response.ok) throw new Error('Failed to delete session')
+      return response.json()
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['sessions'] })
+      toast.success('Session deleted successfully')
+    },
+    onError: (error: Error) => {
+      toast.error(error.message || 'Failed to delete session')
+    },
+  })
 
-  const totalPages = Math.max(1, Math.ceil((data?.total ?? 0) / PAGE_SIZE))
+  const handleSessionStarted = () => {
+    queryClient.invalidateQueries({ queryKey: ['sessions'] })
+  }
 
-  const handleResetFilters = () => {
-    setSessionTypeFilter('ALL')
-    setProjectFilter('ALL')
-    setStartDate('')
-    setEndDate('')
+  const handleClearFilters = () => {
+    setFilters({})
     setPage(1)
   }
 
-  const handleSessionTypeChange = (value: string) => {
-    if (value === 'ALL') {
-      setSessionTypeFilter('ALL')
-    } else {
-      setSessionTypeFilter(value as SessionType)
-    }
-    setPage(1)
-  }
+  const hasActiveFilters =
+    filters.sessionType || filters.projectId || filters.dateRange
 
-  const handleProjectChange = (value: string) => {
-    setProjectFilter(value || 'ALL')
-    setPage(1)
+  // Loading skeleton
+  if (sessionsLoading && page === 1) {
+    return (
+      <div className="space-y-6 p-6">
+        <div className="flex items-center justify-between">
+          <h1 className="text-3xl font-bold">Sessions</h1>
+        </div>
+        <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">
+          {[...Array(6)].map((_, i) => (
+            <div key={i} className="h-64 animate-pulse rounded-lg bg-muted" />
+          ))}
+        </div>
+      </div>
+    )
   }
 
   return (
-    <div className="space-y-6 p-4 md:p-6 lg:p-8">
-      <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
-        <div>
-          <h1 className="text-3xl font-bold">Sessions</h1>
-          <p className="text-muted-foreground">Track your focus blocks, AI partners, and context health.</p>
-        </div>
-        <StartSessionDialog className="w-full md:w-auto" onSessionStarted={() => refetch()} />
+    <div className="space-y-6 p-6">
+      {/* Header */}
+      <div className="flex items-center justify-between">
+        <h1 className="text-3xl font-bold">Sessions</h1>
+        <Button onClick={() => setIsDialogOpen(true)}>
+          <Plus className="mr-2 h-4 w-4" />
+          Start New Session
+        </Button>
       </div>
 
-      <SessionTimer className="shadow-sm" projectName={activeProjectName} />
+      {/* Summary Statistics */}
+      <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
+        <Card>
+          <CardHeader className="pb-3">
+            <CardTitle className="text-sm font-medium text-muted-foreground">
+              Total Sessions
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="flex items-center gap-2">
+              <Calendar className="h-4 w-4 text-muted-foreground" />
+              <span className="text-2xl font-bold">{total}</span>
+            </div>
+          </CardContent>
+        </Card>
 
-      <div className="grid gap-4 md:grid-cols-4">
         <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm text-muted-foreground">Total Sessions</CardTitle>
+          <CardHeader className="pb-3">
+            <CardTitle className="text-sm font-medium text-muted-foreground">
+              Total Coding Time
+            </CardTitle>
           </CardHeader>
           <CardContent>
-            <p className="text-3xl font-semibold">{data?.total ?? 0}</p>
+            <div className="flex items-center gap-2">
+              <Clock className="h-4 w-4 text-muted-foreground" />
+              <span className="text-2xl font-bold">
+                {formatDuration(Math.floor(totalCodingMinutes * 60))}
+              </span>
+            </div>
           </CardContent>
         </Card>
+
         <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm text-muted-foreground">Focus Time (page)</CardTitle>
+          <CardHeader className="pb-3">
+            <CardTitle className="text-sm font-medium text-muted-foreground">
+              Average Duration
+            </CardTitle>
           </CardHeader>
           <CardContent>
-            <p className="text-3xl font-semibold">{formatDuration(summary.totalDurationSeconds, true)}</p>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm text-muted-foreground">Average Duration</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <p className="text-3xl font-semibold">{summary.avgDurationLabel}</p>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm text-muted-foreground">Active + Models</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <p className="text-lg font-semibold">
-              {summary.activeCount} active / {summary.uniqueModels} models
-            </p>
+            <div className="flex items-center gap-2">
+              <Clock className="h-4 w-4 text-muted-foreground" />
+              <span className="text-2xl font-bold">
+                {formatDuration(Math.floor(averageSessionDuration * 60))}
+              </span>
+            </div>
           </CardContent>
         </Card>
       </div>
 
+      {/* Filters */}
       <Card>
         <CardHeader>
-          <CardTitle className="text-lg">Filters</CardTitle>
+          <CardTitle className="flex items-center gap-2">
+            <Filter className="h-4 w-4" />
+            Filters
+          </CardTitle>
         </CardHeader>
-        <CardContent className="space-y-4">
-          <div className="grid gap-4 md:grid-cols-4">
-            <label className="flex flex-col gap-2 text-sm font-medium">
-              Session Type
-              <select
-                value={sessionTypeFilter}
-                onChange={(event) => handleSessionTypeChange(event.target.value)}
-                className="rounded-md border bg-background px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary"
+        <CardContent>
+          <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
+            {/* Session Type Filter */}
+            <div className="space-y-2">
+              <label className="text-sm font-medium">Session Type</label>
+              <Select.Root
+                value={filters.sessionType || 'all'}
+                onValueChange={(value) =>
+                  setFilters((prev) => ({
+                    ...prev,
+                    sessionType: value === 'all' ? undefined : (value as SessionType),
+                  }))
+                }
               >
-                <option value="ALL">All</option>
-                {Object.values(SessionType).map((type) => (
-                  <option key={type} value={type}>
-                    {type}
-                  </option>
-                ))}
-              </select>
-            </label>
+                <Select.Trigger className="flex h-10 w-full items-center justify-between rounded-md border border-input bg-background px-3 py-2 text-sm">
+                  <Select.Value placeholder="All types" />
+                  <Select.Icon>
+                    <ChevronDown className="h-4 w-4 opacity-50" />
+                  </Select.Icon>
+                </Select.Trigger>
+                <Select.Portal>
+                  <Select.Content className="relative z-50 min-w-[8rem] overflow-hidden rounded-md border bg-popover text-popover-foreground shadow-md">
+                    <Select.Viewport className="p-1">
+                      <Select.Item
+                        value="all"
+                        className="relative flex cursor-pointer select-none items-center rounded-sm py-1.5 pl-8 pr-2 text-sm outline-none hover:bg-accent"
+                      >
+                        <Select.ItemText>All Types</Select.ItemText>
+                      </Select.Item>
+                      {Object.values(SessionType).map((type) => (
+                        <Select.Item
+                          key={type}
+                          value={type}
+                          className="relative flex cursor-pointer select-none items-center rounded-sm py-1.5 pl-8 pr-2 text-sm outline-none hover:bg-accent"
+                        >
+                          <Select.ItemText>{type}</Select.ItemText>
+                        </Select.Item>
+                      ))}
+                    </Select.Viewport>
+                  </Select.Content>
+                </Select.Portal>
+              </Select.Root>
+            </div>
 
-            <label className="flex flex-col gap-2 text-sm font-medium">
-              Project
-              <select
-                value={projectFilter}
-                onChange={(event) => handleProjectChange(event.target.value)}
-                className="rounded-md border bg-background px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary"
+            {/* Project Filter */}
+            <div className="space-y-2">
+              <label className="text-sm font-medium">Project</label>
+              <Select.Root
+                value={filters.projectId || 'all'}
+                onValueChange={(value) =>
+                  setFilters((prev) => ({
+                    ...prev,
+                    projectId: value === 'all' ? undefined : value,
+                  }))
+                }
               >
-                <option value="ALL">All</option>
-                {activeProjects.map((project) => (
-                  <option key={project.id} value={project.id}>
-                    {project.name}
-                  </option>
-                ))}
-              </select>
-            </label>
+                <Select.Trigger className="flex h-10 w-full items-center justify-between rounded-md border border-input bg-background px-3 py-2 text-sm">
+                  <Select.Value placeholder="All projects" />
+                  <Select.Icon>
+                    <ChevronDown className="h-4 w-4 opacity-50" />
+                  </Select.Icon>
+                </Select.Trigger>
+                <Select.Portal>
+                  <Select.Content className="relative z-50 min-w-[8rem] overflow-hidden rounded-md border bg-popover text-popover-foreground shadow-md">
+                    <Select.Viewport className="p-1">
+                      <Select.Item
+                        value="all"
+                        className="relative flex cursor-pointer select-none items-center rounded-sm py-1.5 pl-8 pr-2 text-sm outline-none hover:bg-accent"
+                      >
+                        <Select.ItemText>All Projects</Select.ItemText>
+                      </Select.Item>
+                      {projects.map((project) => (
+                        <Select.Item
+                          key={project.id}
+                          value={project.id}
+                          className="relative flex cursor-pointer select-none items-center rounded-sm py-1.5 pl-8 pr-2 text-sm outline-none hover:bg-accent"
+                        >
+                          <Select.ItemText>{project.name}</Select.ItemText>
+                        </Select.Item>
+                      ))}
+                    </Select.Viewport>
+                  </Select.Content>
+                </Select.Portal>
+              </Select.Root>
+            </div>
 
-            <label className="flex flex-col gap-2 text-sm font-medium">
-              Start Date
-              <input
-                type="date"
-                value={startDate}
-                onChange={(event) => {
-                  setStartDate(event.target.value)
-                  setPage(1)
-                }}
-                className="rounded-md border bg-background px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary"
-              />
-            </label>
-
-            <label className="flex flex-col gap-2 text-sm font-medium">
-              End Date
-              <input
-                type="date"
-                value={endDate}
-                onChange={(event) => {
-                  setEndDate(event.target.value)
-                  setPage(1)
-                }}
-                className="rounded-md border bg-background px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary"
-              />
-            </label>
-          </div>
-          <div className="flex justify-end">
-            <Button variant="outline" onClick={handleResetFilters}>
-              Reset Filters
-            </Button>
+            {/* Clear Filters Button */}
+            <div className="flex items-end">
+              <Button
+                variant="outline"
+                onClick={handleClearFilters}
+                disabled={!hasActiveFilters}
+                className="w-full"
+              >
+                Clear Filters
+              </Button>
+            </div>
           </div>
         </CardContent>
       </Card>
 
-      {isError && (
-        <div className="rounded-lg border border-destructive/50 bg-destructive/10 p-6 text-center">
-          <p className="font-semibold text-destructive">Unable to load sessions.</p>
-          <p className="text-sm text-muted-foreground">Refresh or adjust filters to try again.</p>
-        </div>
-      )}
-
-      {isLoading && (
-        <div className="grid gap-4">
-          {Array.from({ length: 3 }).map((_, index) => (
-            <div key={index} className="h-48 rounded-lg border bg-muted/40 animate-pulse" />
+      {/* Sessions List */}
+      {sessions.length === 0 ? (
+        <Card className="py-12">
+          <CardContent className="text-center">
+            <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-muted">
+              <Calendar className="h-8 w-8 text-muted-foreground" />
+            </div>
+            <h3 className="mb-2 text-lg font-semibold">
+              {hasActiveFilters ? 'No sessions match your filters' : 'No sessions yet'}
+            </h3>
+            <p className="mb-4 text-sm text-muted-foreground">
+              {hasActiveFilters
+                ? 'Try adjusting your filters or clearing them to see more sessions'
+                : 'Start your first coding session to begin tracking your progress'}
+            </p>
+            {hasActiveFilters ? (
+              <Button variant="outline" onClick={handleClearFilters}>
+                Clear Filters
+              </Button>
+            ) : (
+              <Button onClick={() => setIsDialogOpen(true)}>
+                <Plus className="mr-2 h-4 w-4" />
+                Start Your First Session
+              </Button>
+            )}
+          </CardContent>
+        </Card>
+      ) : (
+        <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">
+          {sessions.map((session) => (
+            <SessionCard
+              key={session.id}
+              session={session}
+              onDelete={(id) => deleteMutation.mutate(id)}
+              onViewDetails={(id) => console.log('View details:', id)}
+            />
           ))}
         </div>
       )}
 
-      {!isLoading && !isError && sessions.length === 0 && (
-        <div className="rounded-lg border p-10 text-center text-muted-foreground">
-          <p>No sessions match your filters yet.</p>
-          <p className="text-sm">Kick off a new block or adjust the filters above.</p>
-        </div>
-      )}
-
-      <div className="space-y-4">
-        {sessions.map((session) => (
-          <SessionCard key={session.id} session={session} onSessionUpdated={() => refetch()} onSessionDeleted={() => refetch()} />
-        ))}
-      </div>
-
-      {sessions.length > 0 && (
-        <div className="flex flex-col items-center justify-between gap-3 rounded-lg border bg-card p-4 text-sm md:flex-row">
-          <span>
-            Page {page} of {totalPages} · {data?.total ?? 0} sessions
+      {/* Pagination */}
+      {total > limit && (
+        <div className="flex items-center justify-center gap-2">
+          <Button
+            variant="outline"
+            onClick={() => setPage((p) => Math.max(1, p - 1))}
+            disabled={page === 1}
+          >
+            Previous
+          </Button>
+          <span className="text-sm text-muted-foreground">
+            Page {page} of {Math.ceil(total / limit)}
           </span>
-          <div className="flex items-center gap-2">
-            <Button variant="outline" onClick={() => setPage((prev) => Math.max(1, prev - 1))} disabled={page === 1}>
-              Previous
-            </Button>
-            <Button variant="outline" onClick={() => setPage((prev) => prev + 1)} disabled={!data?.hasMore}>
-              Next
-            </Button>
-          </div>
+          <Button
+            variant="outline"
+            onClick={() => setPage((p) => p + 1)}
+            disabled={!hasMore}
+          >
+            Next
+          </Button>
         </div>
       )}
+
+      {/* Start Session Dialog */}
+      <StartSessionDialog
+        isOpen={isDialogOpen}
+        onClose={() => setIsDialogOpen(false)}
+        onSessionStarted={handleSessionStarted}
+      />
     </div>
   )
 }

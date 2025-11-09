@@ -96,12 +96,6 @@ export interface CodingSession {
   endedAt?: Date
 }
 
-export type SessionProjectSummary = Pick<Project, 'id' | 'name' | 'feelsRightScore'>
-
-export interface CodingSessionWithProject extends CodingSession {
-  project?: SessionProjectSummary | null
-}
-
 export interface Habit {
   id: string
   userId: string
@@ -239,28 +233,28 @@ export interface UpdateNoteRequest {
 // ============================================================================
 
 export interface SessionTimerProps {
-  className?: string
-  projectName?: string | null
+  sessionId: string
+  startTime: Date
+  isPaused: boolean
+  elapsedSeconds: number
+  contextHealth: number
+  onPause: () => void
+  onResume: () => void
+  onEnd: () => void
+  onCheckpoint: () => void
 }
 
 export interface SessionCardProps {
-  session: CodingSessionWithProject
-  onSessionUpdated?: () => void
-  onSessionDeleted?: () => void
+  session: CodingSession
+  onDelete?: (sessionId: string) => void
+  onCheckpoint?: (sessionId: string) => void
+  onViewDetails?: (sessionId: string) => void
 }
 
 export interface StartSessionDialogProps {
+  isOpen: boolean
+  onClose: () => void
   onSessionStarted?: (session: CodingSession) => void
-  triggerLabel?: string
-  className?: string
-}
-
-export interface SessionStats {
-  totalSessions: number
-  totalDuration: number
-  averageDuration: number
-  sessionsByType: Record<SessionType, number>
-  sessionsByStatus: Record<SessionStatus, number>
 }
 
 export interface ProjectCardProps {
@@ -304,6 +298,12 @@ export interface StreakData {
   currentStreak: number
   longestStreak: number
   lastShipDate?: Date
+}
+
+export interface SessionStats {
+  totalSessions: number
+  totalCodingMinutes: number
+  averageSessionDuration: number
 }
 
 // ============================================================================
