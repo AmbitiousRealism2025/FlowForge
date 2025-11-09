@@ -1,0 +1,174 @@
+# Fastlane configuration for FlowForge
+# This file contains deployment automation for both iOS and Android
+
+default_platform(:ios)
+
+# iOS Platform
+platform :ios do
+  desc "Deploy iOS app to TestFlight for beta testing"
+  lane :beta_testing do
+    increment_build_number(xcodeproj: "ios/App/App.xcodeproj")
+    build_app(
+      scheme: "App",
+      workspace: "ios/App/App.xcworkspace",
+      export_method: "app-store"
+    )
+    upload_to_testflight(
+      skip_waiting_for_build_processing: true
+    )
+  end
+
+  desc "Deploy iOS app to App Store"
+  lane :deploy_ios do
+    increment_build_number(xcodeproj: "ios/App/App.xcodeproj")
+    build_app(
+      scheme: "App",
+      workspace: "ios/App/App.xcworkspace",
+      export_method: "app-store"
+    )
+    upload_to_app_store(
+      submit_for_review: false,
+      automatic_release: false
+    )
+  end
+
+  desc "Submit iOS app for App Store review"
+  lane :submit_ios do
+    upload_to_app_store(
+      submit_for_review: true,
+      automatic_release: true,
+      force: true,
+      skip_binary_upload: true,
+      skip_screenshots: true,
+      skip_metadata: false
+    )
+  end
+
+  desc "Upload iOS screenshots"
+  lane :upload_screenshots_ios do
+    upload_to_app_store(
+      skip_binary_upload: true,
+      skip_metadata: true,
+      overwrite_screenshots: true
+    )
+  end
+
+  desc "Upload iOS metadata"
+  lane :upload_metadata_ios do
+    upload_to_app_store(
+      skip_binary_upload: true,
+      skip_screenshots: true,
+      force: true
+    )
+  end
+
+  desc "TestFlight setup for external testing"
+  lane :external_testing do
+    pilot(
+      distribute_external: true,
+      groups: ["External Testers"],
+      changelog: "Bug fixes and performance improvements"
+    )
+  end
+end
+
+# Android Platform
+platform :android do
+  desc "Deploy Android app to Play Console beta track"
+  lane :beta_testing do
+    gradle(
+      task: "bundle",
+      build_type: "Release",
+      project_dir: "android/"
+    )
+    upload_to_play_store(
+      track: "beta",
+      skip_upload_apk: true,
+      aab: "android/app/build/outputs/bundle/release/FlowForge-1.0.0.aab"
+    )
+  end
+
+  desc "Deploy Android app to Play Store"
+  lane :deploy_android do
+    gradle(
+      task: "bundle",
+      build_type: "Release",
+      project_dir: "android/"
+    )
+    upload_to_play_store(
+      track: "production",
+      skip_upload_apk: true,
+      aab: "android/app/build/outputs/bundle/release/FlowForge-1.0.0.aab",
+      release_status: "draft"
+    )
+  end
+
+  desc "Upload Android screenshots and metadata"
+  lane :upload_metadata_android do
+    upload_to_play_store(
+      skip_upload_apk: true,
+      skip_upload_aab: true,
+      skip_upload_screenshots: false,
+      skip_upload_metadata: false
+    )
+  end
+
+  desc "Promote beta to production"
+  lane :promote_to_production do
+    upload_to_play_store(
+      track: "beta",
+      track_promote_to: "production",
+      skip_upload_apk: true,
+      skip_upload_aab: true
+    )
+  end
+end
+
+# Cross-platform lanes
+desc "Synchronize version numbers across platforms"
+lane :sync_versions do
+  version = get_version_number(xcodeproj: "ios/App/App.xcodeproj")
+
+  # Update Android version
+  android_set_version_name(
+    version_name: version,
+    gradle_file: "android/app/build.gradle"
+  )
+
+  UI.success("Version synchronized to #{version}")
+end
+
+desc "Deploy to both platforms beta"
+lane :beta_both_platforms do
+  ios_beta_testing
+  android_beta_testing
+
+  UI.success("Beta deployment complete for both platforms!")
+end
+
+desc "Deploy to both platforms production"
+lane :deploy_both_platforms do
+  sync_versions
+  ios_deploy_ios
+  android_deploy_android
+
+  UI.success("Production deployment complete for both platforms!")
+end
+
+desc "Increment version number for both platforms"
+lane :increment_version_number do
+  # iOS version increment
+  increment_version_number(
+    xcodeproj: "ios/App/App.xcodeproj",
+    bump_type: "patch"
+  )
+
+  # Android version increment
+  increment_version_code(
+    gradle_file_path: "android/app/build.gradle"
+  )
+
+  sync_versions
+
+  UI.success("Version numbers incremented!")
+end

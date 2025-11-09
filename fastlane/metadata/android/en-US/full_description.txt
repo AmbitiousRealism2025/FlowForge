@@ -1,0 +1,94 @@
+FlowForge: Your AI-powered developer productivity companion for vibe coding. Maintain flow state, optimize context switching, and accelerate your shipping velocity with ambient intelligence.
+
+🚀 FLOW STATE TRACKING AND OPTIMIZATION
+
+• Automatic deep work session detection and monitoring
+• Real-time flow state indicators with visual feedback
+• AI-powered flow score calculation and trending
+• Smart interruption protection during critical coding sessions
+• Haptic feedback for flow state transitions
+
+🤖 AI CONTEXT MONITORING
+
+• Real-time AI context health tracking
+• Intelligent alerts for context degradation
+• Automatic context switch detection
+• AI-powered insights into development patterns
+• Ambient intelligence that learns your workflow
+
+⚡ SESSION & PROJECT MANAGEMENT
+
+• Intuitive session tracking with smart timers
+• Project organization with "feels right" indicators
+• Pivot counter to track direction changes
+• Comprehensive session history and analytics
+• Quick session notes and documentation
+
+📊 ADVANCED ANALYTICS DASHBOARD
+
+• Flow score calculation with historical trending
+• Heat maps showing peak productivity times
+• Weekly and monthly productivity insights
+• Session quality metrics and patterns
+• Customizable analytics views
+
+✅ HABIT TRACKING SYSTEM
+
+• Daily developer check-ins
+• Ship streak monitoring and celebration
+• Customizable productivity goals
+• Daily, weekly, and monthly habit tracking
+• Smart break reminders
+
+📱 NATIVE MOBILE EXPERIENCE
+
+• Full offline functionality with background sync
+• Push notifications for context health alerts
+• Optimized battery usage and performance
+• Native haptic feedback
+• Material Design 3 UI
+
+🎯 DESIGNED FOR MODERN DEVELOPERS
+
+FlowForge understands the unique challenges of AI-assisted development and vibe coding. Whether you're using ChatGPT, Claude, GitHub Copilot, or other AI tools, FlowForge helps you:
+
+✓ Maintain coding context across sessions
+✓ Protect and extend your flow state
+✓ Track and optimize productivity patterns
+✓ Ship code faster with better focus
+✓ Build sustainable coding habits
+
+Perfect for:
+• AI-assisted developers and vibe coders
+• Remote and distributed development teams
+• Indie hackers and solo developers
+• Full-stack and mobile developers
+• Anyone serious about shipping velocity
+
+🔒 PRIVACY-FIRST ARCHITECTURE
+
+Your code and context data stays on your device. All AI context analysis happens locally with optional end-to-end encrypted cloud sync. We never access your code.
+
+• Local-first data storage
+• End-to-end encryption
+• GDPR and CCPA compliant
+• No third-party tracking
+• Open source core components
+
+💡 KEY BENEFITS
+
+Increase Shipping Velocity: Track what matters and eliminate productivity blockers
+Maintain Flow State: AI-powered protection from context switching
+Data-Driven Insights: Understand your productivity patterns
+Build Better Habits: Daily tracking and accountability
+Work Offline: Full functionality without internet connection
+
+Join thousands of developers who've transformed their productivity with FlowForge. Download now and start shipping in flow state.
+
+📧 Support & Resources
+Website: https://flowforge.app
+Support: https://flowforge.app/support
+Privacy Policy: https://flowforge.app/privacy
+Terms of Service: https://flowforge.app/terms
+
+Made with ❤️ for developers, by developers.

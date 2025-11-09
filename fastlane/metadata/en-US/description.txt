@@ -1,0 +1,58 @@
+FlowForge is your AI-powered companion for vibe coding. Stay in flow state longer and ship code faster with ambient intelligence that understands your development context.
+
+KEY FEATURES
+
+AI Context Health Monitoring
+• Real-time tracking of your coding context and flow state
+• Smart alerts when context switches threaten productivity
+• AI-powered insights into your development patterns
+• Ambient intelligence that learns your workflow
+
+Flow State Tracking
+• Automatic detection and monitoring of deep work sessions
+• Visual flow state indicators and analytics
+• Haptic feedback for flow state transitions
+• Context-aware interruption protection
+
+Session & Project Management
+• Intuitive session tracking with smart timers
+• Project organization with "feels right" indicators
+• Pivot counter to track project direction changes
+• Comprehensive session history and analytics
+
+Advanced Analytics Dashboard
+• Flow score calculation and trending
+• Heat maps showing your most productive times
+• Weekly and monthly productivity insights
+• Session quality metrics and patterns
+
+Productivity Companion
+• Daily check-ins and habit tracking
+• Ship streak monitoring
+• Smart break reminders
+• Customizable productivity goals
+
+Native Mobile Experience
+• Full offline functionality
+• Push notifications for context health
+• Haptic feedback for flow transitions
+• Optimized for battery and performance
+
+DESIGNED FOR DEVELOPERS
+
+FlowForge understands the unique challenges of AI-assisted development. Whether you're coding with ChatGPT, Claude, or other AI tools, FlowForge helps you maintain context, protect your flow state, and ship faster.
+
+Perfect for:
+• AI-assisted developers
+• Remote and distributed teams
+• Indie hackers and solo developers
+• Anyone practicing "vibe coding"
+
+PRIVACY FIRST
+
+Your code and context data stays on your device. All AI context analysis happens locally with optional end-to-end encrypted cloud sync.
+
+Join thousands of developers who've transformed their productivity with FlowForge. Download now and start shipping in flow state.
+
+Terms of Service: https://flowforge.app/terms
+Privacy Policy: https://flowforge.app/privacy
