@@ -5,8 +5,6 @@
  */
 
 import { NextRequest } from 'next/server'
-import { getServerSession } from 'next-auth/next'
-import { authOptions } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
 import { CreateSessionSchema } from '@/lib/validations'
 import {
@@ -17,6 +15,7 @@ import {
   buildPaginatedResponse,
   handleZodError,
   handlePrismaError,
+  withAuth,
 } from '@/lib/api-utils'
 import { SessionStatus, SessionType } from '@/types'
 
@@ -24,15 +23,8 @@ import { SessionStatus, SessionType } from '@/types'
  * GET /api/sessions
  * List sessions with pagination and optional filters
  */
-export async function GET(request: NextRequest) {
+async function listSessionsHandler(userId: string, request: NextRequest) {
   try {
-    const session = await getServerSession(authOptions)
-
-    if (!session || !session.user?.id) {
-      return apiError('Unauthorized - Please sign in', 401)
-    }
-
-    const userId = session.user.id
     const { searchParams } = new URL(request.url)
     const { page, limit, skip } = parsePaginationParams(searchParams)
 
@@ -79,13 +71,6 @@ export async function GET(request: NextRequest) {
               feelsRightScore: true,
             },
           },
-          user: {
-            select: {
-              id: true,
-              name: true,
-              email: true,
-            },
-          },
         },
       }),
       prisma.codingSession.count({ where }),
@@ -98,19 +83,14 @@ export async function GET(request: NextRequest) {
   }
 }
 
+export const GET = withAuth((userId, request) => listSessionsHandler(userId, request))
+
 /**
  * POST /api/sessions
  * Create new coding session
  */
-export async function POST(request: NextRequest) {
+async function createSessionHandler(userId: string, request: NextRequest) {
   try {
-    const session = await getServerSession(authOptions)
-
-    if (!session || !session.user?.id) {
-      return apiError('Unauthorized - Please sign in', 401)
-    }
-
-    const userId = session.user.id
     const body = await parseJsonBody(request)
 
     if (!body) {
@@ -154,3 +134,5 @@ export async function POST(request: NextRequest) {
     return handlePrismaError(error)
   }
 }
+
+export const POST = withAuth((userId, request) => createSessionHandler(userId, request))

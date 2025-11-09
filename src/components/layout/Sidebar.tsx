@@ -41,10 +41,10 @@ export function Sidebar() {
     <div className="fixed left-0 top-0 z-40 flex h-screen w-64 flex-col border-r bg-card">
       {/* Logo/Brand */}
       <div className="flex items-center gap-2 border-b p-6">
-        <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-[#00D9A5] text-white font-bold">
+        <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-flow-green text-white font-bold">
           F
         </div>
-        <span className="text-xl font-bold" style={{ color: '#00D9A5' }}>
+        <span className="text-xl font-bold text-flow-green">
           FlowForge
         </span>
       </div>

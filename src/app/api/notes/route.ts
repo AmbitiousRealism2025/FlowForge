@@ -5,8 +5,6 @@
  */
 
 import { NextRequest } from 'next/server'
-import { getServerSession } from 'next-auth/next'
-import { authOptions } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
 import { CreateNoteSchema } from '@/lib/validations'
 import {
@@ -17,6 +15,7 @@ import {
   buildPaginatedResponse,
   handleZodError,
   handlePrismaError,
+  withAuth,
 } from '@/lib/api-utils'
 import { NoteCategory } from '@/types'
 
@@ -24,15 +23,8 @@ import { NoteCategory } from '@/types'
  * GET /api/notes
  * List notes with pagination, search, and filters
  */
-export async function GET(request: NextRequest) {
+async function listNotesHandler(userId: string, request: NextRequest) {
   try {
-    const session = await getServerSession(authOptions)
-
-    if (!session || !session.user?.id) {
-      return apiError('Unauthorized - Please sign in', 401)
-    }
-
-    const userId = session.user.id
     const { searchParams } = new URL(request.url)
     const { page, limit, skip } = parsePaginationParams(searchParams)
 
@@ -106,19 +98,14 @@ export async function GET(request: NextRequest) {
   }
 }
 
+export const GET = withAuth((userId, request) => listNotesHandler(userId, request))
+
 /**
  * POST /api/notes
  * Create new note
  */
-export async function POST(request: NextRequest) {
+async function createNoteHandler(userId: string, request: NextRequest) {
   try {
-    const session = await getServerSession(authOptions)
-
-    if (!session || !session.user?.id) {
-      return apiError('Unauthorized - Please sign in', 401)
-    }
-
-    const userId = session.user.id
     const body = await parseJsonBody(request)
 
     if (!body) {
@@ -196,3 +183,5 @@ export async function POST(request: NextRequest) {
     return handlePrismaError(error)
   }
 }
+
+export const POST = withAuth((userId, request) => createNoteHandler(userId, request))

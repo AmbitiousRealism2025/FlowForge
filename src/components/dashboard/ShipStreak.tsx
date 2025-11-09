@@ -69,8 +69,8 @@ export function ShipStreak() {
 
   const getStreakColor = () => {
     if (currentStreak === 0) return 'text-muted-foreground'
-    if (currentStreak < 7) return 'text-[#FFB800]'
-    return 'text-[#00D9A5]'
+    if (currentStreak < 7) return 'text-caution-amber'
+    return 'text-flow-green'
   }
 
   return (
@@ -85,10 +85,10 @@ export function ShipStreak() {
         {/* Current Streak Display */}
         <div className="text-center py-4">
           <div className="flex items-center justify-center gap-2 mb-2">
-            <span className="text-5xl font-bold" style={{ color: '#00D9A5' }}>
+            <span className="text-5xl font-bold text-flow-green">
               {currentStreak}
             </span>
-            <Flame className="h-8 w-8" style={{ color: '#00D9A5' }} />
+            <Flame className="h-8 w-8 text-flow-green" />
           </div>
           <p className="text-sm text-muted-foreground">
             {currentStreak === 1 ? 'day streak' : 'days streak'}
@@ -116,8 +116,8 @@ export function ShipStreak() {
             {shipMutation.isPending ? 'Marking...' : 'Mark Ship Today'}
           </Button>
         ) : (
-          <div className="text-center py-3 px-4 rounded-lg bg-[#00D9A5]/10 border border-[#00D9A5]/20">
-            <p className="text-sm font-medium" style={{ color: '#00D9A5' }}>
+          <div className="text-center py-3 px-4 rounded-lg bg-flow-green/10 border border-flow-green/20">
+            <p className="text-sm font-medium text-flow-green">
               ✓ Shipped today! Great work!
             </p>
           </div>

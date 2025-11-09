@@ -16,33 +16,33 @@ const flowStateConfig = {
   [FlowState.BLOCKED]: {
     label: 'Blocked',
     emoji: '🚫',
-    color: '#FF4757',
-    bgColor: 'bg-[#FF4757]/10',
-    borderColor: 'border-[#FF4757]/20',
+    textColor: 'text-stuck-red',
+    bgColor: 'bg-stuck-red/10',
+    borderColor: 'border-stuck-red/20',
     icon: AlertCircle,
   },
   [FlowState.NEUTRAL]: {
     label: 'Neutral',
     emoji: '😐',
-    color: '#FFB800',
-    bgColor: 'bg-[#FFB800]/10',
-    borderColor: 'border-[#FFB800]/20',
+    textColor: 'text-caution-amber',
+    bgColor: 'bg-caution-amber/10',
+    borderColor: 'border-caution-amber/20',
     icon: Activity,
   },
   [FlowState.FLOWING]: {
     label: 'Flowing',
     emoji: '🟢',
-    color: '#00D9A5',
-    bgColor: 'bg-[#00D9A5]/10',
-    borderColor: 'border-[#00D9A5]/20',
+    textColor: 'text-flow-green',
+    bgColor: 'bg-flow-green/10',
+    borderColor: 'border-flow-green/20',
     icon: Activity,
   },
   [FlowState.DEEP_FLOW]: {
     label: 'Deep Flow',
     emoji: '⚡',
-    color: '#00D9A5',
-    bgColor: 'bg-[#00D9A5]/20',
-    borderColor: 'border-[#00D9A5]/30',
+    textColor: 'text-flow-green',
+    bgColor: 'bg-flow-green/20',
+    borderColor: 'border-flow-green/30',
     icon: Zap,
   },
 }
@@ -78,7 +78,7 @@ export function VibeMeter({ flowState = FlowState.NEUTRAL }: VibeMeterProps) {
     <Card className={`${config.bgColor} ${config.borderColor}`}>
       <CardHeader>
         <CardTitle className="text-lg flex items-center gap-2">
-          <Icon className="h-5 w-5" style={{ color: config.color }} />
+          <Icon className={`h-5 w-5 ${config.textColor}`} />
           Vibe Meter
         </CardTitle>
       </CardHeader>
@@ -86,7 +86,7 @@ export function VibeMeter({ flowState = FlowState.NEUTRAL }: VibeMeterProps) {
         {/* Current Flow State Display */}
         <div className="text-center py-4">
           <div className="text-5xl mb-2">{config.emoji}</div>
-          <p className="text-xl font-bold" style={{ color: config.color }}>
+          <p className={`text-xl font-bold ${config.textColor}`}>
             {config.label}
           </p>
         </div>

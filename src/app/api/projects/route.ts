@@ -5,27 +5,26 @@
  */
 
 import { NextRequest } from 'next/server'
-import { getServerSession } from 'next-auth/next'
-import { authOptions } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
 import { CreateProjectSchema } from '@/lib/validations'
-import { apiResponse, apiError, parseJsonBody, handleZodError, handlePrismaError } from '@/lib/api-utils'
-import { subDays } from 'date-fns'
+import {
+  apiResponse,
+  apiError,
+  parseJsonBody,
+  handleZodError,
+  handlePrismaError,
+  withAuth,
+  parsePaginationParams,
+  buildPaginatedResponse,
+} from '@/lib/api-utils'
 import type { Momentum } from '@/types'
 
 /**
  * GET /api/projects
  * List projects with optional filters and sorting
  */
-export async function GET(request: NextRequest) {
+async function listProjectsHandler(userId: string, request: NextRequest) {
   try {
-    const session = await getServerSession(authOptions)
-
-    if (!session || !session.user?.id) {
-      return apiError('Unauthorized - Please sign in', 401)
-    }
-
-    const userId = session.user.id
     const { searchParams } = new URL(request.url)
 
     // Build where clause with optional filters
@@ -51,10 +50,20 @@ export async function GET(request: NextRequest) {
         break
     }
 
-    // Query projects with session statistics
+    // Parse pagination parameters
+    const { page, limit, skip } = parsePaginationParams(searchParams)
+
+    // Query total count with same where clause
+    const total = await prisma.project.count({
+      where,
+    })
+
+    // Query projects page with session statistics
     const projects = await prisma.project.findMany({
       where,
       orderBy,
+      skip,
+      take: limit,
       include: {
         _count: {
           select: {
@@ -75,7 +84,7 @@ export async function GET(request: NextRequest) {
 
     // Calculate momentum for each project
     const now = new Date()
-    const projectsWithMomentum = projects.map((project: typeof projects[0]) => {
+    const projectsWithMomentum = projects.map((project) => {
       let momentum: Momentum = 'QUIET'
 
       if (project.codingSessions.length > 0) {
@@ -91,7 +100,7 @@ export async function GET(request: NextRequest) {
       }
 
       // Remove the codingSessions array from response (we only needed it for momentum calculation)
-      const { codingSessions, ...projectData } = project
+      const { codingSessions: _codingSessions, ...projectData } = project
 
       return {
         ...projectData,
@@ -100,26 +109,22 @@ export async function GET(request: NextRequest) {
       }
     })
 
-    return apiResponse(projectsWithMomentum)
+    // Return paginated response consistent with other list endpoints
+    return buildPaginatedResponse(projectsWithMomentum, total, page, limit)
   } catch (error) {
     console.error('Error fetching projects:', error)
     return handlePrismaError(error)
   }
 }
 
+export const GET = withAuth((userId, request) => listProjectsHandler(userId, request))
+
 /**
  * POST /api/projects
  * Create new project
  */
-export async function POST(request: NextRequest) {
+async function createProjectHandler(userId: string, request: NextRequest) {
   try {
-    const session = await getServerSession(authOptions)
-
-    if (!session || !session.user?.id) {
-      return apiError('Unauthorized - Please sign in', 401)
-    }
-
-    const userId = session.user.id
     const body = await parseJsonBody(request)
 
     if (!body) {
@@ -154,3 +159,5 @@ export async function POST(request: NextRequest) {
     return handlePrismaError(error)
   }
 }
+
+export const POST = withAuth((userId, request) => createProjectHandler(userId, request))

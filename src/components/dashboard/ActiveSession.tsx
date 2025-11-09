@@ -2,7 +2,7 @@
 
 import { useEffect } from 'react'
 import { useSessionStore } from '@/store/sessionStore'
-import { formatDuration, getFlowStateColor } from '@/lib/utils'
+import { formatDuration } from '@/lib/utils'
 import { Play, Pause, Square, Bookmark, Clock, AlertCircle } from 'lucide-react'
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/Card'
 import { Button } from '@/components/ui/Button'
@@ -10,11 +10,12 @@ import * as Progress from '@radix-ui/react-progress'
 import { useToast } from '@/hooks/useToast'
 
 interface ActiveSessionProps {
-  activeSessionId: string | null
+  activeSessionId?: string | null
 }
 
-export function ActiveSession({ activeSessionId }: ActiveSessionProps) {
+export function ActiveSession({ activeSessionId: propsActiveSessionId }: ActiveSessionProps) {
   const {
+    activeSessionId: storeActiveSessionId,
     elapsedSeconds,
     isPaused,
     sessionType,
@@ -23,20 +24,28 @@ export function ActiveSession({ activeSessionId }: ActiveSessionProps) {
     pauseSession,
     resumeSession,
     endSession,
+    updateElapsed,
+    updateContextHealth,
   } = useSessionStore()
 
   const { toast } = useToast()
 
+  // Use store as source of truth, fall back to prop if store is null
+  const activeSessionId = storeActiveSessionId ?? propsActiveSessionId ?? null
+
   // Timer update effect
   useEffect(() => {
-    if (activeSessionId && !isPaused) {
-      const interval = setInterval(() => {
-        // Store handles the increment
-      }, 1000)
-
-      return () => clearInterval(interval)
+    if (!activeSessionId || isPaused) {
+      return
     }
-  }, [activeSessionId, isPaused])
+
+    const interval = setInterval(() => {
+      updateElapsed()
+      updateContextHealth()
+    }, 1000)
+
+    return () => clearInterval(interval)
+  }, [activeSessionId, isPaused, updateElapsed, updateContextHealth])
 
   const handleStartSession = () => {
     toast.info('Coming in Phase 1.4', 'Start Session')
@@ -82,7 +91,7 @@ export function ActiveSession({ activeSessionId }: ActiveSessionProps) {
     )
   }
 
-  const healthColor = contextHealth >= 70 ? 'bg-[#00D9A5]' : contextHealth >= 40 ? 'bg-[#FFB800]' : 'bg-[#FF4757]'
+  const healthColor = contextHealth >= 70 ? 'bg-flow-green' : contextHealth >= 40 ? 'bg-caution-amber' : 'bg-stuck-red'
 
   return (
     <Card>
@@ -123,7 +132,7 @@ export function ActiveSession({ activeSessionId }: ActiveSessionProps) {
             <span className="text-muted-foreground">Context Health</span>
             <div className="flex items-center gap-1">
               {contextHealth < 40 && (
-                <AlertCircle className="h-4 w-4 text-[#FF4757]" />
+                <AlertCircle className="h-4 w-4 text-stuck-red" />
               )}
               <span className="font-medium">{contextHealth}%</span>
             </div>

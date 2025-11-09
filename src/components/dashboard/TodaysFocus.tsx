@@ -14,6 +14,9 @@ export function TodaysFocus() {
   const { toast } = useToast()
   const queryClient = useQueryClient()
 
+  // Use dashboard store for focus text and placeholder
+  const { focusPlaceholder, setTodaysFocus } = useDashboardStore()
+
   // Fetch focus text
   const { data, isLoading } = useQuery({
     queryKey: ['dashboard', 'focus'],
@@ -53,6 +56,17 @@ export function TodaysFocus() {
     }
   }, [isEditing, focusText])
 
+  // Debounced store update (300ms delay)
+  useEffect(() => {
+    if (!isEditing) return
+
+    const timeoutId = setTimeout(() => {
+      setTodaysFocus(editValue)
+    }, 300)
+
+    return () => clearTimeout(timeoutId)
+  }, [editValue, isEditing, setTodaysFocus])
+
   const handleSave = () => {
     updateMutation.mutate(editValue)
   }
@@ -61,6 +75,8 @@ export function TodaysFocus() {
     setEditValue(focusText)
     setIsEditing(false)
   }
+
+  const placeholder = focusPlaceholder()
 
   if (isLoading) {
     return (
@@ -82,7 +98,7 @@ export function TodaysFocus() {
         <div className="flex-1 min-w-0">
           <div className="flex items-center justify-between mb-2">
             <h2 className="text-sm font-medium text-muted-foreground">
-              Today's Focus
+              Today&apos;s Focus
             </h2>
             {!isEditing && (
               <Button
@@ -97,9 +113,10 @@ export function TodaysFocus() {
           </div>
 
           {!isEditing ? (
-            <div
+            <button
+              type="button"
               onClick={() => setIsEditing(true)}
-              className="cursor-pointer"
+              className="cursor-pointer text-left w-full"
             >
               {focusText ? (
                 <p className="text-2xl md:text-3xl font-bold text-foreground">
@@ -107,10 +124,10 @@ export function TodaysFocus() {
                 </p>
               ) : (
                 <p className="text-2xl md:text-3xl font-bold text-muted-foreground/50 italic">
-                  What's your main focus today?
+                  {placeholder}
                 </p>
               )}
-            </div>
+            </button>
           ) : (
             <div className="space-y-3">
               <textarea
@@ -119,7 +136,7 @@ export function TodaysFocus() {
                 onChange={(e) => setEditValue(e.target.value)}
                 className="w-full resize-none rounded-lg border bg-background p-3 text-lg font-semibold focus:outline-none focus:ring-2 focus:ring-primary"
                 rows={2}
-                placeholder="What's your main focus today?"
+                placeholder={placeholder}
               />
               <div className="flex gap-2">
                 <Button

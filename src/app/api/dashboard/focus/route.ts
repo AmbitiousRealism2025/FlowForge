@@ -5,26 +5,18 @@
  */
 
 import { NextRequest } from 'next/server'
-import { getServerSession } from 'next-auth/next'
-import { authOptions } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
 import { FocusTextSchema } from '@/lib/validations'
-import { apiResponse, apiError, parseJsonBody, handleZodError } from '@/lib/api-utils'
+import { apiResponse, apiError, parseJsonBody, handleZodError, handlePrismaError, withAuth } from '@/lib/api-utils'
 
 /**
  * GET /api/dashboard/focus
  * Retrieve today's focus text from user preferences
  */
-export async function GET() {
+async function getFocusHandler(userId: string) {
   try {
-    const session = await getServerSession(authOptions)
-
-    if (!session || !session.user?.id) {
-      return apiError('Unauthorized - Please sign in', 401)
-    }
-
     const user = await prisma.user.findUnique({
-      where: { id: session.user.id },
+      where: { id: userId },
       select: { preferences: true },
     })
 
@@ -38,22 +30,18 @@ export async function GET() {
     return apiResponse({ focus: todaysFocus })
   } catch (error) {
     console.error('Error fetching focus text:', error)
-    return apiError('Failed to fetch focus text', 500)
+    return handlePrismaError(error)
   }
 }
+
+export const GET = withAuth((_userId, _request) => getFocusHandler(_userId))
 
 /**
  * PUT /api/dashboard/focus
  * Update today's focus text in user preferences
  */
-export async function PUT(request: NextRequest) {
+async function updateFocusHandler(userId: string, request: NextRequest) {
   try {
-    const session = await getServerSession(authOptions)
-
-    if (!session || !session.user?.id) {
-      return apiError('Unauthorized - Please sign in', 401)
-    }
-
     const body = await parseJsonBody(request)
 
     if (!body) {
@@ -70,7 +58,7 @@ export async function PUT(request: NextRequest) {
 
     // Get current preferences
     const user = await prisma.user.findUnique({
-      where: { id: session.user.id },
+      where: { id: userId },
       select: { preferences: true },
     })
 
@@ -82,7 +70,7 @@ export async function PUT(request: NextRequest) {
 
     // Update preferences with new focus text
     await prisma.user.update({
-      where: { id: session.user.id },
+      where: { id: userId },
       data: {
         preferences: {
           ...currentPreferences,
@@ -94,6 +82,8 @@ export async function PUT(request: NextRequest) {
     return apiResponse({ focus })
   } catch (error) {
     console.error('Error updating focus text:', error)
-    return apiError('Failed to update focus text', 500)
+    return handlePrismaError(error)
   }
 }
+
+export const PUT = withAuth((userId, request) => updateFocusHandler(userId, request))
