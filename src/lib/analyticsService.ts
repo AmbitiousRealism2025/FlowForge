@@ -136,6 +136,9 @@ export async function getStreakData(): Promise<ApiResponse<StreakData>> {
   }
 }
 
+// Alias for consistency with naming convention
+export const fetchStreakData = getStreakData
+
 /**
  * Mark ship for today
  */
@@ -205,6 +208,9 @@ export async function getWeeklyShipData(): Promise<
     return []
   }
 }
+
+// Alias for consistency with naming convention
+export const fetchWeeklyShipData = getWeeklyShipData
 
 // ============================================================================
 // Ship Status Functions
@@ -356,6 +362,16 @@ export function fillMissingDays(
   }
 
   return filledData
+}
+
+/**
+ * Format weekly data for chart consumption
+ * Ensures complete 7-day dataset with proper labels
+ */
+export function formatWeeklyDataForChart(
+  weeklyData: Array<{ date: string; shipCount: number; dayOfWeek: string }>
+): Array<{ date: string; shipCount: number; dayOfWeek: string }> {
+  return fillMissingDays(weeklyData)
 }
 
 /**

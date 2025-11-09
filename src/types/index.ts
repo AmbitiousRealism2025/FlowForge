@@ -259,6 +259,10 @@ export interface UpdateNoteRequest {
   isTemplate?: boolean
 }
 
+export interface MarkShipRequest {
+  notes?: string
+}
+
 // ============================================================================
 // Component Prop Types
 // ============================================================================
@@ -323,8 +327,15 @@ export interface NoteCardProps {
 export interface ShipStreakCardProps {
   currentStreak: number
   longestStreak: number
-  lastShipDate?: Date
-  onMarkShip: () => void
+  lastShipDate: Date | null
+  onMarkShip: () => Promise<void>
+  isLoading: boolean
+}
+
+export interface WeeklyShipChartProps {
+  data: WeeklyShipData[]
+  isLoading: boolean
+  height?: number // default 300
 }
 
 // ============================================================================
@@ -342,7 +353,13 @@ export interface DashboardStats {
 export interface StreakData {
   currentStreak: number
   longestStreak: number
-  lastShipDate?: Date
+  lastShipDate: Date | null
+}
+
+export interface WeeklyShipData {
+  date: string // YYYY-MM-DD format
+  shipCount: number
+  dayOfWeek: string // 'Mon', 'Tue', etc.
 }
 
 export interface SessionStats {

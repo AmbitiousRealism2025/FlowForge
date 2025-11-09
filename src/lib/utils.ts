@@ -7,6 +7,14 @@ import {
   differenceInMinutes,
   differenceInSeconds,
   differenceInDays,
+  differenceInCalendarDays,
+  startOfDay,
+  endOfDay,
+  addDays,
+  subDays,
+  isAfter,
+  isBefore,
+  isSameDay,
 } from 'date-fns'
 import { SessionType, SessionStatus, NoteCategory, Momentum, CodingSession } from '@/types'
 
@@ -524,4 +532,88 @@ export function calculatePercentage(
   if (total === 0) return 0
   const percentage = (value / total) * 100
   return Number(percentage.toFixed(decimalPlaces))
+}
+
+// ============================================================================
+// Analytics Utilities
+// ============================================================================
+
+/**
+ * Normalize date to start of day in user's timezone
+ * Critical for accurate 'today' calculations across timezones
+ */
+export function normalizeToUserTimezone(date: Date, timezone: string = 'UTC'): Date {
+  // For now, use startOfDay which normalizes to local timezone
+  // In production, consider using date-fns-tz for proper timezone handling
+  return startOfDay(date)
+}
+
+/**
+ * Format streak display with fire emoji
+ */
+export function formatStreakDisplay(currentStreak: number): string {
+  if (currentStreak === 0) {
+    return 'No active streak'
+  }
+  const plural = currentStreak === 1 ? 'day' : 'days'
+  return `🔥 ${currentStreak} ${plural} streak`
+}
+
+/**
+ * Get milestone message for special streak numbers
+ * Returns null if not a milestone
+ */
+export function getStreakMilestone(currentStreak: number): string | null {
+  const milestones: Record<number, string> = {
+    7: 'Week streak! 🎉',
+    14: 'Two week streak! 🎊',
+    30: 'Month streak! 🎊',
+    50: 'Halfway to 100! 🌟',
+    100: 'Century! 🏆',
+    365: 'Full year! 🎆',
+  }
+
+  return milestones[currentStreak] || null
+}
+
+/**
+ * Determine if celebration should trigger
+ * Celebrate when: streak extended OR reached milestone
+ */
+export function shouldCelebrate(previousStreak: number, newStreak: number): boolean {
+  // Celebrate when streak extends
+  if (newStreak > previousStreak) return true
+
+  // Celebrate when reaching a milestone
+  if (getStreakMilestone(newStreak) !== null) return true
+
+  return false
+}
+
+/**
+ * Get short weekday label (Mon, Tue, etc.)
+ */
+export function getWeekdayLabel(date: Date): string {
+  return format(date, 'EEE')
+}
+
+/**
+ * Get last 7 days including today in chronological order
+ */
+export function getLast7Days(): Date[] {
+  const days: Date[] = []
+  const today = new Date()
+
+  for (let i = 6; i >= 0; i--) {
+    days.push(subDays(today, i))
+  }
+
+  return days
+}
+
+/**
+ * Format date for chart tooltips
+ */
+export function formatChartDate(date: Date): string {
+  return format(date, 'MMM d, yyyy')
 }

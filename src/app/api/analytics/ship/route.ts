@@ -134,31 +134,15 @@ export async function POST(request: NextRequest) {
       },
     })
 
-    // Determine if this extended the streak
-    // Check if yesterday had ships - only then did we extend the streak
-    const yesterday = new Date(today)
-    yesterday.setDate(today.getDate() - 1)
-    const yesterdayNormalized = startOfDay(yesterday)
-
-    const yesterdayRecord = await prisma.analytics.findUnique({
-      where: {
-        userId_date: {
-          userId,
-          date: yesterdayNormalized,
-        },
-      },
-      select: {
-        shipCount: true,
-      },
-    })
-
-    const extendedStreak = isFirstShipToday && yesterdayRecord !== null && yesterdayRecord.shipCount > 0
+    // Determine if this is a milestone
+    const milestones = [7, 14, 30, 50, 100, 365]
+    const isNewMilestone = milestones.includes(currentStreak)
 
     return apiResponse(
       {
         analytics: updatedAnalytics,
-        currentStreak,
-        extendedStreak,
+        newStreak: currentStreak,
+        isNewMilestone,
       },
       isFirstShipToday ? 201 : 200
     )
