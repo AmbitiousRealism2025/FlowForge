@@ -17,7 +17,9 @@ This file provides guidance to Claude Code when working with the FlowForge proje
      - Plan v1 - Phase 1.3 (Dashboard & Layout) ✅
      - Plan v1 - Phase 1.4 (Session Management) ✅
      - Plan v1 - Phase 1.5 (Project Management) ✅
-   - **Next Phase**: Plan v1 - Phase 1.6+ (Additional Features - TBD)
+     - Plan v1 - Phase 1.7 (Analytics & Ship Streak) ✅
+     - Plan v1 - Phase 2.1 (Habit Tracking System) ✅
+   - **Next Phase**: Plan v1 - Phase 1.6, 1.8, or 2.2+ (Additional Features - TBD)
    - **Master Plan**: [plan-v1-:-master-plan-for-mvp.md](plan-v1-:-master-plan-for-mvp.md)
 
 4. **Update STATUS.md** - After completing each file/task, update the STATUS.md to reflect progress
@@ -36,7 +38,7 @@ This file provides guidance to Claude Code when working with the FlowForge proje
 
 FlowForge is an AI productivity companion designed for developers who practice "vibe coding" - using AI assistants to build software. The app tracks flow states, AI context health, and shipping velocity rather than traditional task completion metrics.
 
-**Current Status**: Phase 1.5 (Project Management) complete. Comprehensive project management system with feels-right tracking (1-5 scale with emoji indicators) and pivot counter celebrating direction changes. Implemented FeelsRightSlider with debounced updates, PivotCounter with celebration messaging, CreateProjectDialog for project creation, ProjectCard with momentum indicators and stats, and complete projects page with grid view, filters, sorting, and summary statistics. Extended types, utilities, and projectService for full CRUD operations. 8 files created/modified. Ready for next phase of feature development.
+**Current Status**: Phase 2.1 (Habit Tracking System) complete. Comprehensive habit tracking system with streaks, daily check-ins, and milestone celebrations. Implemented HabitCard with category indicators and streak display, HabitCheckIn component, complete habits dashboard with summary statistics and optimistic updates, habitService with full CRUD operations and streak calculation, and three API routes for list/create, completion with timezone-aware streak tracking, and streak history. Extended types with HabitWithStats and related interfaces, added habit-specific utilities, and Zod validation schemas. 10 files created/modified implementing vibe coder habits (Daily Ship, Context Refresh, Code Review, Backup Check, Flow Block). Ready for next phase of feature development.
 
 ## Quick Reference
 

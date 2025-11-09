@@ -3,7 +3,7 @@
  */
 
 import { z } from 'zod'
-import { SessionType, SessionStatus, NoteCategory } from '@/types'
+import { SessionType, SessionStatus, NoteCategory, HabitCategory } from '@/types'
 
 // ============================================================================
 // Session Schemas
@@ -102,6 +102,26 @@ export const MarkShipSchema = z.object({
 })
 
 // ============================================================================
+// Habit Schemas
+// ============================================================================
+
+export const CreateHabitSchema = z.object({
+  name: z.string().min(1).max(100),
+  category: z.nativeEnum(HabitCategory),
+  targetFrequency: z.number().int().min(1).max(365).default(1),
+})
+
+export const UpdateHabitSchema = z.object({
+  name: z.string().min(1).max(100).optional(),
+  targetFrequency: z.number().int().min(1).max(365).optional(),
+  isActive: z.boolean().optional(),
+})
+
+export const CompleteHabitSchema = z.object({
+  notes: z.string().max(500).optional(),
+})
+
+// ============================================================================
 // Type Exports
 // ============================================================================
 
@@ -116,3 +136,6 @@ export type CreateNoteInput = z.infer<typeof CreateNoteSchema>
 export type UpdateNoteInput = z.infer<typeof UpdateNoteSchema>
 export type FocusTextInput = z.infer<typeof FocusTextSchema>
 export type MarkShipInput = z.infer<typeof MarkShipSchema>
+export type CreateHabitInput = z.infer<typeof CreateHabitSchema>
+export type UpdateHabitInput = z.infer<typeof UpdateHabitSchema>
+export type CompleteHabitInput = z.infer<typeof CompleteHabitSchema>

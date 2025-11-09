@@ -8,7 +8,7 @@ import {
   differenceInSeconds,
   differenceInDays,
 } from 'date-fns'
-import { SessionType, SessionStatus, NoteCategory, Momentum, CodingSession } from '@/types'
+import { SessionType, SessionStatus, NoteCategory, Momentum, CodingSession, HabitCategory } from '@/types'
 
 // ============================================================================
 // Class Name Utilities
@@ -601,4 +601,158 @@ export function parseTags(tagsInput: string): string[] {
  */
 export function formatTags(tags: string[]): string {
   return tags.join(', ')
+}
+
+// ============================================================================
+// Habit Utilities
+// ============================================================================
+
+/**
+ * Get emoji icon for habit category
+ */
+export function getHabitCategoryIcon(category: HabitCategory): string {
+  switch (category) {
+    case HabitCategory.DAILY_SHIP:
+      return '🚀'
+    case HabitCategory.CONTEXT_REFRESH:
+      return '🔄'
+    case HabitCategory.CODE_REVIEW:
+      return '👀'
+    case HabitCategory.BACKUP_CHECK:
+      return '💾'
+    case HabitCategory.FLOW_BLOCK:
+      return '⏰'
+  }
+}
+
+/**
+ * Get human-readable label for habit category
+ */
+export function getHabitCategoryLabel(category: HabitCategory): string {
+  switch (category) {
+    case HabitCategory.DAILY_SHIP:
+      return 'Daily Ship'
+    case HabitCategory.CONTEXT_REFRESH:
+      return 'Context Refresh'
+    case HabitCategory.CODE_REVIEW:
+      return 'Code Review'
+    case HabitCategory.BACKUP_CHECK:
+      return 'Backup Check'
+    case HabitCategory.FLOW_BLOCK:
+      return 'Flow Block'
+  }
+}
+
+/**
+ * Get Tailwind color class for habit category
+ */
+export function getHabitCategoryColor(category: HabitCategory): string {
+  switch (category) {
+    case HabitCategory.DAILY_SHIP:
+      return 'text-flow-green'
+    case HabitCategory.CONTEXT_REFRESH:
+      return 'text-claude-purple'
+    case HabitCategory.CODE_REVIEW:
+      return 'text-blue-500'
+    case HabitCategory.BACKUP_CHECK:
+      return 'text-caution-amber'
+    case HabitCategory.FLOW_BLOCK:
+      return 'text-red-500'
+  }
+}
+
+/**
+ * Get brief description for habit category
+ */
+export function getHabitCategoryDescription(category: HabitCategory): string {
+  switch (category) {
+    case HabitCategory.DAILY_SHIP:
+      return 'Ship something every day'
+    case HabitCategory.CONTEXT_REFRESH:
+      return 'Refresh AI context regularly'
+    case HabitCategory.CODE_REVIEW:
+      return 'Review code quality'
+    case HabitCategory.BACKUP_CHECK:
+      return 'Verify backups'
+    case HabitCategory.FLOW_BLOCK:
+      return 'Schedule focused work time'
+  }
+}
+
+/**
+ * Format habit streak count with emoji
+ */
+export function formatHabitStreak(streakCount: number): string {
+  if (streakCount === 0) return 'No streak yet'
+  const dayText = streakCount === 1 ? 'day' : 'days'
+  return `🔥 ${streakCount} ${dayText} streak`
+}
+
+/**
+ * Get milestone message for special streak numbers
+ */
+export function getHabitStreakMilestone(streakCount: number): string | null {
+  switch (streakCount) {
+    case 7:
+      return 'Week streak! 🎉'
+    case 30:
+      return 'Month streak! 🚀'
+    case 100:
+      return 'Century! 💯'
+    default:
+      return null
+  }
+}
+
+/**
+ * Check if habit is due today based on last completion and frequency
+ */
+export function isHabitDueToday(
+  lastCompletedAt: Date | null,
+  targetFrequency: number,
+  timezone: string
+): boolean {
+  if (!lastCompletedAt) return true
+
+  const now = new Date()
+  const lastCompleted = typeof lastCompletedAt === 'string' ? parseISO(lastCompletedAt) : lastCompletedAt
+  const daysSinceCompletion = differenceInDays(now, lastCompleted)
+
+  // For daily habits (frequency=1), due if not completed today
+  if (targetFrequency === 1) {
+    return !isSameDay(now, lastCompleted)
+  }
+
+  // For other frequencies, check if enough days have passed
+  return daysSinceCompletion >= targetFrequency
+}
+
+/**
+ * Calculate updated streak based on last completion date
+ */
+export function calculateHabitStreak(
+  lastCompletedAt: Date | null,
+  streakCount: number,
+  timezone: string
+): number {
+  if (!lastCompletedAt) return 0
+
+  const now = new Date()
+  const lastCompleted = typeof lastCompletedAt === 'string' ? parseISO(lastCompletedAt) : lastCompletedAt
+
+  // If completed today, streak is current
+  if (isSameDay(now, lastCompleted)) {
+    return streakCount
+  }
+
+  // Calculate days since last completion
+  const daysSince = differenceInCalendarDays(now, lastCompleted)
+
+  // If last completed yesterday, streak continues
+  if (daysSince === 1) {
+    return streakCount
+  }
+
+  // If older than yesterday, streak breaks
+  return 0
 }
