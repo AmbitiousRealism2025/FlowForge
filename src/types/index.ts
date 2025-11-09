@@ -73,12 +73,12 @@ export interface Project {
   name: string
   description?: string
   feelsRightScore: number
-  shipTarget?: Date
+  shipTarget?: Date | string
   pivotCount: number
   stackNotes?: string
   isActive: boolean
-  createdAt: Date
-  updatedAt: Date
+  createdAt: Date | string
+  updatedAt: Date | string
 }
 
 export interface CodingSession {
@@ -92,8 +92,8 @@ export interface CodingSession {
   durationSeconds: number
   checkpointNotes?: string
   sessionStatus: SessionStatus
-  startedAt: Date
-  endedAt?: Date
+  startedAt: Date | string
+  endedAt?: Date | string
 }
 
 export interface Habit {
@@ -103,9 +103,9 @@ export interface Habit {
   category: HabitCategory
   streakCount: number
   targetFrequency: number
-  lastCompletedAt?: Date
+  lastCompletedAt?: Date | string
   isActive: boolean
-  createdAt: Date
+  createdAt: Date | string
 }
 
 export interface Note {
@@ -118,19 +118,19 @@ export interface Note {
   isTemplate: boolean
   sessionId?: string
   projectId?: string
-  createdAt: Date
-  updatedAt: Date
+  createdAt: Date | string
+  updatedAt: Date | string
 }
 
 export interface FlowBlock {
   id: string
   userId: string
   projectId?: string
-  startTime: Date
-  endTime: Date
+  startTime: Date | string
+  endTime: Date | string
   blockType: FlowBlockType
   notes?: string
-  createdAt: Date
+  createdAt: Date | string
 }
 
 export interface AIContext {
@@ -139,22 +139,22 @@ export interface AIContext {
   modelName: string
   contextHealth: number
   issuesDetected: string[]
-  lastRefreshedAt: Date
+  lastRefreshedAt: Date | string
   conversationCount: number
-  createdAt: Date
-  updatedAt: Date
+  createdAt: Date | string
+  updatedAt: Date | string
 }
 
 export interface Analytics {
   id: string
   userId: string
-  date: Date
+  date: Date | string
   shipCount: number
   flowScore: number
   codingMinutes: number
   contextRefreshes: number
   metadata?: Record<string, unknown>
-  createdAt: Date
+  createdAt: Date | string
 }
 
 // ============================================================================
@@ -214,14 +214,14 @@ export interface UpdateSessionRequest {
   productivityScore?: number
   checkpointNotes?: string
   sessionStatus?: SessionStatus
-  endedAt?: Date
+  endedAt?: Date | string
 }
 
 export interface CreateProjectRequest {
   name: string
   description?: string
   feelsRightScore?: number
-  shipTarget?: Date
+  shipTarget?: Date | string
   stackNotes?: string
 }
 
@@ -229,7 +229,7 @@ export interface UpdateProjectRequest {
   name?: string
   description?: string
   feelsRightScore?: number
-  shipTarget?: Date
+  shipTarget?: Date | string
   stackNotes?: string
   isActive?: boolean
 }
@@ -323,7 +323,7 @@ export interface NoteCardProps {
 export interface ShipStreakCardProps {
   currentStreak: number
   longestStreak: number
-  lastShipDate?: Date
+  lastShipDate?: Date | string
   onMarkShip: () => void
 }
 
@@ -342,7 +342,7 @@ export interface DashboardStats {
 export interface StreakData {
   currentStreak: number
   longestStreak: number
-  lastShipDate?: Date
+  lastShipDate?: Date | string
 }
 
 export interface SessionStats {
