@@ -201,8 +201,9 @@ export async function getWeeklyShipData(): Promise<
       throw new Error('Failed to fetch weekly data')
     }
 
-    const data = await response.json()
-    return data
+    const result = await response.json()
+    // Extract data array from API envelope { success, data }
+    return result.data || []
   } catch (error) {
     console.error('Error fetching weekly ship data:', error)
     return []
