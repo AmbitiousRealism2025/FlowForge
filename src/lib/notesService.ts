@@ -1,86 +1,116 @@
-import {
+/**
+ * Business logic service for notes CRUD operations
+ */
+
+import { format } from 'date-fns'
+import type {
   Note,
+  NoteWithRelations,
   NoteCategory,
   CreateNoteRequest,
   UpdateNoteRequest,
-  ApiResponse,
+  NoteFilters,
   PaginatedResponse,
 } from '@/types'
-import { truncateText, formatRelativeTime, validateNoteCategory } from '@/lib/utils'
+import {
+  truncateText,
+  formatRelativeTime,
+  parseTags,
+  formatTags,
+  getNoteCategoryIcon,
+  getNoteCategoryLabel,
+  getNoteCategoryColor,
+  validateNoteCategory,
+} from '@/lib/utils'
 
 // ============================================================================
 // Constants
 // ============================================================================
 
-const API_BASE_URL = '/api/notes'
+const API_BASE = '/api/notes'
 
 // ============================================================================
-// Notes CRUD Functions
+// API Functions
 // ============================================================================
+
+/**
+ * Fetch notes with optional filters and pagination
+ */
+export async function fetchNotes(
+  filters: NoteFilters = {},
+  page: number = 1,
+  limit: number = 20
+): Promise<PaginatedResponse<NoteWithRelations>> {
+  try {
+    const params = new URLSearchParams()
+
+    if (filters.category) params.append('category', filters.category)
+    if (filters.search) params.append('search', filters.search)
+    if (filters.sessionId) params.append('sessionId', filters.sessionId)
+    if (filters.projectId) params.append('projectId', filters.projectId)
+    if (filters.tags && filters.tags.length > 0) {
+      filters.tags.forEach(tag => params.append('tags', tag))
+    }
+    params.append('page', page.toString())
+    params.append('limit', limit.toString())
+
+    const response = await fetch(`${API_BASE}?${params.toString()}`)
+
+    if (!response.ok) {
+      throw new Error(`Failed to fetch notes: ${response.statusText}`)
+    }
+
+    const data = await response.json()
+    return data
+  } catch (error) {
+    throw new Error(handleNoteError(error))
+  }
+}
+
+/**
+ * Fetch a single note by ID
+ */
+export async function fetchNoteById(noteId: string): Promise<NoteWithRelations> {
+  try {
+    const response = await fetch(`${API_BASE}/${noteId}`)
+
+    if (!response.ok) {
+      throw new Error(`Failed to fetch note: ${response.statusText}`)
+    }
+
+    const data = await response.json()
+    return data
+  } catch (error) {
+    throw new Error(handleNoteError(error))
+  }
+}
 
 /**
  * Create a new note
  */
-export async function createNote(
-  title: string | null,
-  content: string,
-  category: NoteCategory,
-  tags: string[],
-  sessionId: string | null = null,
-  projectId: string | null = null
-): Promise<ApiResponse<Note>> {
-  // Validate category
-  if (!validateNoteCategory(category)) {
-    return {
-      success: false,
-      data: null,
-      error: 'Invalid note category',
-      message: null,
-    }
-  }
-
+export async function createNote(data: CreateNoteRequest): Promise<Note> {
   try {
-    const payload: CreateNoteRequest = {
-      title: title || undefined,
-      content,
-      category,
-      tags,
-      sessionId: sessionId || undefined,
-      projectId: projectId || undefined,
+    // Validate category if provided
+    if (data.category && !validateNoteCategory(data.category)) {
+      throw new Error('Invalid note category')
     }
 
-    const response = await fetch(API_BASE_URL, {
+    const response = await fetch(API_BASE, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
       },
-      body: JSON.stringify(payload),
+      body: JSON.stringify(data),
     })
 
     if (!response.ok) {
-      const error = await response.json()
-      return {
-        success: false,
-        data: null,
-        error: error.message || 'Failed to create note',
-        message: null,
-      }
+      throw new Error(`Failed to create note: ${response.statusText}`)
     }
 
-    const note = await response.json()
-    return {
-      success: true,
-      data: note,
-      error: null,
-      message: 'Note created successfully',
-    }
+    const result = await response.json()
+    return result
   } catch (error) {
-    return {
-      success: false,
-      data: null,
-      error: handleNoteError(error),
-      message: null,
-    }
+    throw new Error(handleNoteError(error))
   }
 }
 
@@ -89,149 +119,56 @@ export async function createNote(
  */
 export async function updateNote(
   noteId: string,
-  updates: UpdateNoteRequest
-): Promise<ApiResponse<Note>> {
+  data: UpdateNoteRequest
+): Promise<Note> {
   try {
-    const response = await fetch(`${API_BASE_URL}/${noteId}`, {
+    const response = await fetch(`${API_BASE}/${noteId}`, {
       method: 'PATCH',
       headers: {
         'Content-Type': 'application/json',
       },
-      body: JSON.stringify(updates),
+      body: JSON.stringify(data),
     })
 
     if (!response.ok) {
-      const error = await response.json()
-      return {
-        success: false,
-        data: null,
-        error: error.message || 'Failed to update note',
-        message: null,
-      }
+      throw new Error(`Failed to update note: ${response.statusText}`)
     }
 
-    const note = await response.json()
-    return {
-      success: true,
-      data: note,
-      error: null,
-      message: 'Note updated successfully',
-    }
+    const result = await response.json()
+    return result
   } catch (error) {
-    return {
-      success: false,
-      data: null,
-      error: handleNoteError(error),
-      message: null,
-    }
+    throw new Error(handleNoteError(error))
   }
 }
 
 /**
  * Delete a note
  */
-export async function deleteNote(noteId: string): Promise<ApiResponse<void>> {
+export async function deleteNote(noteId: string): Promise<boolean> {
   try {
-    const response = await fetch(`${API_BASE_URL}/${noteId}`, {
+    const response = await fetch(`${API_BASE}/${noteId}`, {
       method: 'DELETE',
     })
 
     if (!response.ok) {
-      const error = await response.json()
-      return {
-        success: false,
-        data: null,
-        error: error.message || 'Failed to delete note',
-        message: null,
-      }
+      throw new Error(`Failed to delete note: ${response.statusText}`)
     }
 
-    return {
-      success: true,
-      data: null,
-      error: null,
-      message: 'Note deleted successfully',
-    }
+    return true
   } catch (error) {
-    return {
-      success: false,
-      data: null,
-      error: handleNoteError(error),
-      message: null,
-    }
+    throw new Error(handleNoteError(error))
   }
 }
 
-// ============================================================================
-// Search & Filter Functions
-// ============================================================================
-
 /**
- * Search notes with filters
+ * Search notes by query string
  */
 export async function searchNotes(
   searchQuery: string,
-  category: NoteCategory | null = null,
-  tags: string[] = [],
   page: number = 1,
   limit: number = 20
-): Promise<PaginatedResponse<Note>> {
-  try {
-    const params = new URLSearchParams({
-      page: page.toString(),
-      limit: limit.toString(),
-    })
-
-    if (searchQuery) params.append('q', searchQuery)
-    if (category) params.append('category', String(category))
-    if (tags.length > 0) params.append('tags', tags.join(','))
-
-    const response = await fetch(`${API_BASE_URL}?${params.toString()}`)
-
-    if (!response.ok) {
-      const error = await response.json()
-      return {
-        success: false,
-        data: null,
-        total: 0,
-        page,
-        limit,
-        hasMore: false,
-        error: error.message || 'Failed to search notes',
-        message: null,
-      }
-    }
-
-    const data = await response.json()
-    const notes: Note[] = Array.isArray(data)
-      ? data
-      : Array.isArray(data.data)
-        ? data.data
-        : Array.isArray(data.items)
-          ? data.items
-          : []
-    return {
-      success: true,
-      data: notes,
-      total: data.total ?? notes.length,
-      page: data.page ?? page,
-      limit: data.limit ?? limit,
-      hasMore: data.hasMore ?? false,
-      error: null,
-      message: null,
-    }
-  } catch (error) {
-    return {
-      success: false,
-      data: null,
-      total: 0,
-      page,
-      limit,
-      hasMore: false,
-      error: handleNoteError(error),
-      message: null,
-    }
-  }
+): Promise<PaginatedResponse<NoteWithRelations>> {
+  return fetchNotes({ search: searchQuery }, page, limit)
 }
 
 /**
@@ -241,134 +178,62 @@ export async function getNotesByCategory(
   category: NoteCategory,
   page: number = 1,
   limit: number = 20
-): Promise<PaginatedResponse<Note>> {
-  return searchNotes('', category, [], page, limit)
-}
-
-/**
- * Get notes by tags
- */
-export async function getNotesByTags(
-  tags: string[],
-  page: number = 1,
-  limit: number = 20
-): Promise<PaginatedResponse<Note>> {
-  return searchNotes('', null, tags, page, limit)
+): Promise<PaginatedResponse<NoteWithRelations>> {
+  return fetchNotes({ category }, page, limit)
 }
 
 // ============================================================================
-// Tag Management Functions
+// Utility Functions
 // ============================================================================
 
 /**
- * Parse comma-separated tags input
+ * Get note preview (first 150 characters of content)
  */
-export function parseTags(tagsInput: string): string[] {
-  return tagsInput
-    .split(',')
-    .map((tag) => tag.trim().toLowerCase())
-    .filter((tag) => tag.length > 0)
-    .filter((tag, index, self) => self.indexOf(tag) === index) // Remove duplicates
+export function getNotePreview(note: Note): string {
+  return truncateText(note.content, 150)
 }
 
 /**
- * Format tags array as comma-separated string
- */
-export function formatTags(tags: string[]): string {
-  return tags.join(', ')
-}
-
-/**
- * Extract common tags from notes with counts
- */
-export function extractCommonTags(notes: Note[]): Array<{ tag: string; count: number }> {
-  const tagCounts = new Map<string, number>()
-
-  notes.forEach((note) => {
-    note.tags.forEach((tag) => {
-      tagCounts.set(tag, (tagCounts.get(tag) || 0) + 1)
-    })
-  })
-
-  // Convert to array and sort by count (descending)
-  const sortedTags = Array.from(tagCounts.entries())
-    .map(([tag, count]) => ({ tag, count }))
-    .sort((a, b) => b.count - a.count)
-
-  // Return top 10 most common tags
-  return sortedTags.slice(0, 10)
-}
-
-// ============================================================================
-// Note Display Functions
-// ============================================================================
-
-/**
- * Get preview text from note content
- */
-export function getNotePreview(note: Note, maxLength: number = 150): string {
-  return truncateText(note.content, maxLength)
-}
-
-/**
- * Get icon/emoji for note category
- */
-export function getNoteCategoryIcon(category: NoteCategory): string {
-  switch (category) {
-    case NoteCategory.PROMPT_PATTERN:
-      return '💡'
-    case NoteCategory.GOLDEN_CODE:
-      return '⭐'
-    case NoteCategory.DEBUG_LOG:
-      return '🐛'
-    case NoteCategory.MODEL_NOTE:
-      return '🤖'
-    case NoteCategory.INSIGHT:
-      return '💭'
-    default:
-      return '📝'
-  }
-}
-
-/**
- * Get human-readable label for note category
- */
-export function getNoteCategoryLabel(category: NoteCategory): string {
-  switch (category) {
-    case NoteCategory.PROMPT_PATTERN:
-      return 'Prompt Pattern'
-    case NoteCategory.GOLDEN_CODE:
-      return 'Golden Code'
-    case NoteCategory.DEBUG_LOG:
-      return 'Debug Log'
-    case NoteCategory.MODEL_NOTE:
-      return 'Model Note'
-    case NoteCategory.INSIGHT:
-      return 'Insight'
-    default:
-      return 'Note'
-  }
-}
-
-/**
- * Format note timestamp (created or updated)
+ * Format note timestamp for display
  */
 export function formatNoteTimestamp(note: Note): string {
-  const updatedAt = new Date(note.updatedAt)
   const now = new Date()
+  const updatedAt = typeof note.updatedAt === 'string'
+    ? new Date(note.updatedAt)
+    : note.updatedAt
+  const createdAt = typeof note.createdAt === 'string'
+    ? new Date(note.createdAt)
+    : note.createdAt
+
   const hoursSinceUpdate = (now.getTime() - updatedAt.getTime()) / (1000 * 60 * 60)
 
   if (hoursSinceUpdate < 24) {
     return `Updated ${formatRelativeTime(updatedAt)}`
+  } else {
+    return `Created ${format(createdAt, 'MMM d')}`
   }
-
-  const createdAt = new Date(note.createdAt)
-  return `Created ${formatRelativeTime(createdAt)}`
 }
 
-// ============================================================================
-// Grouping Functions
-// ============================================================================
+/**
+ * Extract common tags from notes array
+ */
+export function extractCommonTags(
+  notes: Note[]
+): Array<{ tag: string; count: number }> {
+  const tagCounts = new Map<string, number>()
+
+  notes.forEach((note) => {
+    note.tags.forEach((tag) => {
+      const normalizedTag = tag.toLowerCase()
+      tagCounts.set(normalizedTag, (tagCounts.get(normalizedTag) || 0) + 1)
+    })
+  })
+
+  return Array.from(tagCounts.entries())
+    .map(([tag, count]) => ({ tag, count }))
+    .sort((a, b) => b.count - a.count)
+    .slice(0, 10)
+}
 
 /**
  * Group notes by category
@@ -386,35 +251,28 @@ export function groupNotesByCategory(notes: Note[]): Map<NoteCategory, Note[]> {
   return grouped
 }
 
-// ============================================================================
-// Validation Functions
-// ============================================================================
-
 /**
- * Validate note data before making API calls
+ * Validate note data
  */
-export function validateNoteData(data: Partial<CreateNoteRequest | UpdateNoteRequest>): {
+export function validateNoteData(data: Partial<CreateNoteRequest>): {
   isValid: boolean
   errors: string[]
 } {
   const errors: string[] = []
 
-  if ('content' in data) {
-    if (!data.content || data.content.trim().length === 0) {
-      errors.push('Note content is required')
-    }
+  // Content must be non-empty
+  if (!data.content || data.content.trim().length === 0) {
+    errors.push('Content is required')
   }
 
-  if ('category' in data && data.category) {
-    if (!validateNoteCategory(data.category)) {
-      errors.push('Invalid note category')
-    }
+  // Category must be valid NoteCategory
+  if (data.category && !validateNoteCategory(data.category)) {
+    errors.push('Invalid note category')
   }
 
-  if ('tags' in data && data.tags) {
-    if (!Array.isArray(data.tags)) {
-      errors.push('Tags must be an array')
-    }
+  // Tags must be string array
+  if (data.tags && !Array.isArray(data.tags)) {
+    errors.push('Tags must be an array')
   }
 
   return {
@@ -423,19 +281,17 @@ export function validateNoteData(data: Partial<CreateNoteRequest | UpdateNoteReq
   }
 }
 
-// ============================================================================
-// Error Handling
-// ============================================================================
-
 /**
- * Handle note errors consistently
+ * Handle note error and return formatted error message
  */
 export function handleNoteError(error: unknown): string {
   if (error instanceof Error) {
     return error.message
   }
+
   if (typeof error === 'string') {
     return error
   }
-  return 'An unexpected error occurred'
+
+  return 'An unknown error occurred'
 }
