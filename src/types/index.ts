@@ -272,12 +272,8 @@ export interface UpdateNoteRequest {
   isTemplate?: boolean
 }
 
-export interface NoteFilters {
-  category?: NoteCategory
-  tags?: string[]
-  search?: string
-  sessionId?: string
-  projectId?: string
+export interface MarkShipRequest {
+  notes?: string
 }
 
 // ============================================================================

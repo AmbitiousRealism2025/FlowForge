@@ -49,7 +49,7 @@ export async function GET() {
       const emptyStreakData: StreakData = {
         currentStreak: 0,
         longestStreak: 0,
-        lastShipDate: undefined,
+        lastShipDate: null,
       }
       return apiResponse(emptyStreakData)
     }
@@ -115,7 +115,7 @@ export async function GET() {
 
     // Get last ship date
     const lastShipRecord = analyticsRecords.find((record: { date: Date; shipCount: number }) => record.shipCount > 0)
-    const lastShipDate = lastShipRecord ? lastShipRecord.date : undefined
+    const lastShipDate = lastShipRecord ? lastShipRecord.date : null
 
     const streakData: StreakData = {
       currentStreak,

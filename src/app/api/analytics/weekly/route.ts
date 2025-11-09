@@ -76,7 +76,7 @@ export async function GET() {
       const dayOfWeek = format(date, 'EEE') // Mon, Tue, Wed, etc.
 
       weeklyData.push({
-        date: date.toISOString(),
+        date: dateKey, // Use YYYY-MM-DD format
         shipCount,
         dayOfWeek,
       })
