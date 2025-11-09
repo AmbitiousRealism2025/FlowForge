@@ -122,6 +122,17 @@ export interface Note {
   updatedAt: Date
 }
 
+export interface NoteWithRelations extends Note {
+  session?: {
+    id: string
+    sessionType: SessionType
+  }
+  project?: {
+    id: string
+    name: string
+  }
+}
+
 export interface FlowBlock {
   id: string
   userId: string
@@ -163,12 +174,13 @@ export interface Analytics {
 
 export interface ApiResponse<T> {
   success: boolean
-  data: T | null
-  error: string | null
-  message: string | null
+  data?: T
+  error?: string
+  message?: string
 }
 
-export interface PaginatedResponse<T> extends ApiResponse<T[]> {
+export interface PaginatedResponse<T> {
+  items: T[]
   total: number
   page: number
   limit: number
@@ -218,6 +230,7 @@ export interface CreateNoteRequest {
   tags: string[]
   sessionId?: string
   projectId?: string
+  isTemplate?: boolean
 }
 
 export interface UpdateNoteRequest {
@@ -226,6 +239,14 @@ export interface UpdateNoteRequest {
   category?: NoteCategory
   tags?: string[]
   isTemplate?: boolean
+}
+
+export interface NoteFilters {
+  category?: NoteCategory
+  tags?: string[]
+  search?: string
+  sessionId?: string
+  projectId?: string
 }
 
 // ============================================================================
@@ -270,9 +291,27 @@ export interface FeelsRightSliderProps {
 }
 
 export interface NoteCardProps {
-  note: Note
-  onEdit?: (noteId: string) => void
+  note: NoteWithRelations
+  onEdit?: (note: Note) => void
   onDelete?: (noteId: string) => void
+  onCopy?: (content: string) => void
+}
+
+export interface CreateNoteDialogProps {
+  isOpen: boolean
+  onClose: () => void
+  onNoteCreated?: (note: Note) => void
+  initialSessionId?: string
+  initialProjectId?: string
+}
+
+export interface NoteEditorProps {
+  value: string
+  onChange: (value: string) => void
+  category: NoteCategory
+  onCategoryChange: (category: NoteCategory) => void
+  placeholder?: string
+  autoFocus?: boolean
 }
 
 export interface ShipStreakCardProps {

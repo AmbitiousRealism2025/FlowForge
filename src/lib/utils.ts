@@ -307,6 +307,42 @@ export function getSessionStatusLabel(status: SessionStatus): string {
 }
 
 /**
+ * Get emoji icon for note category
+ */
+export function getNoteCategoryIcon(category: NoteCategory): string {
+  switch (category) {
+    case NoteCategory.PROMPT_PATTERN:
+      return '💡'
+    case NoteCategory.GOLDEN_CODE:
+      return '⭐'
+    case NoteCategory.DEBUG_LOG:
+      return '🐛'
+    case NoteCategory.MODEL_NOTE:
+      return '🤖'
+    case NoteCategory.INSIGHT:
+      return '💭'
+  }
+}
+
+/**
+ * Get human-readable label for note category
+ */
+export function getNoteCategoryLabel(category: NoteCategory): string {
+  switch (category) {
+    case NoteCategory.PROMPT_PATTERN:
+      return 'Prompt Pattern'
+    case NoteCategory.GOLDEN_CODE:
+      return 'Golden Code'
+    case NoteCategory.DEBUG_LOG:
+      return 'Debug Log'
+    case NoteCategory.MODEL_NOTE:
+      return 'Model Note'
+    case NoteCategory.INSIGHT:
+      return 'Insight'
+  }
+}
+
+/**
  * Get Tailwind color class for note category
  */
 export function getNoteCategoryColor(category: NoteCategory): string {
@@ -321,6 +357,24 @@ export function getNoteCategoryColor(category: NoteCategory): string {
       return 'text-blue-500'
     case NoteCategory.INSIGHT:
       return 'text-gray-500'
+  }
+}
+
+/**
+ * Get Tailwind background color class for note category
+ */
+export function getNoteCategoryBgColor(category: NoteCategory): string {
+  switch (category) {
+    case NoteCategory.PROMPT_PATTERN:
+      return 'bg-purple-100 dark:bg-purple-900/20'
+    case NoteCategory.GOLDEN_CODE:
+      return 'bg-yellow-100 dark:bg-yellow-900/20'
+    case NoteCategory.DEBUG_LOG:
+      return 'bg-red-100 dark:bg-red-900/20'
+    case NoteCategory.MODEL_NOTE:
+      return 'bg-blue-100 dark:bg-blue-900/20'
+    case NoteCategory.INSIGHT:
+      return 'bg-gray-100 dark:bg-gray-900/20'
   }
 }
 
@@ -424,4 +478,27 @@ export function calculatePercentage(
   if (total === 0) return 0
   const percentage = (value / total) * 100
   return Number(percentage.toFixed(decimalPlaces))
+}
+
+// ============================================================================
+// Tag Utilities
+// ============================================================================
+
+/**
+ * Parse comma-separated tags string into array
+ * Trims whitespace, removes duplicates, converts to lowercase
+ */
+export function parseTags(tagsInput: string): string[] {
+  return tagsInput
+    .split(',')
+    .map((tag) => tag.trim().toLowerCase())
+    .filter((tag) => tag.length > 0)
+    .filter((tag, index, array) => array.indexOf(tag) === index)
+}
+
+/**
+ * Format tags array into comma-separated string
+ */
+export function formatTags(tags: string[]): string {
+  return tags.join(', ')
 }
