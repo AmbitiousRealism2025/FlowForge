@@ -1,13 +1,21 @@
 import {
   Project,
+  ProjectWithStats,
   CodingSession,
   Momentum,
   CreateProjectRequest,
   UpdateProjectRequest,
   ApiResponse,
+  ProjectFilters,
 } from '@/types'
 import { differenceInHours } from 'date-fns'
-import { formatRelativeTime, formatDuration, validateFeelsRightScore } from '@/lib/utils'
+import {
+  formatRelativeTime,
+  formatDuration,
+  validateFeelsRightScore,
+  getMomentumEmoji as getEmoji,
+  getMomentumLabel as getLabel,
+} from '@/lib/utils'
 
 // ============================================================================
 // Constants
@@ -18,6 +26,89 @@ const API_BASE_URL = '/api/projects'
 // ============================================================================
 // Project CRUD Functions
 // ============================================================================
+
+/**
+ * Fetch all projects with optional filters
+ */
+export async function fetchProjects(filters?: ProjectFilters): Promise<ApiResponse<ProjectWithStats[]>> {
+  try {
+    const params = new URLSearchParams()
+
+    if (filters?.isActive !== null && filters?.isActive !== undefined) {
+      params.append('isActive', String(filters.isActive))
+    }
+    if (filters?.sortBy) {
+      params.append('sortBy', filters.sortBy)
+    }
+    if (filters?.search) {
+      params.append('search', filters.search)
+    }
+
+    const queryString = params.toString()
+    const url = queryString ? `${API_BASE_URL}?${queryString}` : API_BASE_URL
+
+    const response = await fetch(url)
+
+    if (!response.ok) {
+      const error = await response.json()
+      return {
+        success: false,
+        data: null,
+        error: error.message || 'Failed to fetch projects',
+        message: null,
+      }
+    }
+
+    const data = await response.json()
+    return {
+      success: true,
+      data: data.data || data || [],
+      error: null,
+      message: 'Projects fetched successfully',
+    }
+  } catch (error) {
+    return {
+      success: false,
+      data: null,
+      error: handleProjectError(error),
+      message: null,
+    }
+  }
+}
+
+/**
+ * Fetch a single project by ID with statistics
+ */
+export async function fetchProjectById(projectId: string): Promise<ApiResponse<ProjectWithStats>> {
+  try {
+    const response = await fetch(`${API_BASE_URL}/${projectId}`)
+
+    if (!response.ok) {
+      const error = await response.json()
+      return {
+        success: false,
+        data: null,
+        error: error.message || 'Failed to fetch project',
+        message: null,
+      }
+    }
+
+    const data = await response.json()
+    return {
+      success: true,
+      data: data.data || data,
+      error: null,
+      message: 'Project fetched successfully',
+    }
+  } catch (error) {
+    return {
+      success: false,
+      data: null,
+      error: handleProjectError(error),
+      message: null,
+    }
+  }
+}
 
 /**
  * Create a new project
@@ -213,6 +304,41 @@ export async function recordPivot(
 }
 
 /**
+ * Delete a project (soft delete - sets isActive to false)
+ */
+export async function deleteProject(projectId: string): Promise<ApiResponse<boolean>> {
+  try {
+    const response = await fetch(`${API_BASE_URL}/${projectId}`, {
+      method: 'DELETE',
+    })
+
+    if (!response.ok) {
+      const error = await response.json()
+      return {
+        success: false,
+        data: null,
+        error: error.message || 'Failed to delete project',
+        message: null,
+      }
+    }
+
+    return {
+      success: true,
+      data: true,
+      error: null,
+      message: 'Project deleted successfully',
+    }
+  } catch (error) {
+    return {
+      success: false,
+      data: null,
+      error: handleProjectError(error),
+      message: null,
+    }
+  }
+}
+
+/**
  * Get project statistics
  */
 export async function getProjectStats(projectId: string): Promise<{
@@ -392,6 +518,29 @@ export function formatShipTarget(shipTarget: Date | null | undefined): string {
 export function getProjectDuration(project: Project, sessions: CodingSession[]): string {
   const totalSeconds = sessions.reduce((sum, session) => sum + session.durationSeconds, 0)
   return formatDuration(totalSeconds)
+}
+
+/**
+ * Format project stats for display
+ */
+export function formatProjectStats(project: ProjectWithStats): {
+  durationFormatted: string
+  momentumEmoji: string
+  momentumLabel: string
+  lastWorkedFormatted: string
+  shipTargetFormatted: string
+} {
+  const durationSeconds = project.totalCodingMinutes * 60
+
+  return {
+    durationFormatted: formatDuration(durationSeconds),
+    momentumEmoji: getMomentumEmoji(project.momentum),
+    momentumLabel: getMomentumLabel(project.momentum),
+    lastWorkedFormatted: project.lastWorkedDate
+      ? formatRelativeTime(project.lastWorkedDate)
+      : 'Never worked on',
+    shipTargetFormatted: formatShipTarget(project.shipTarget),
+  }
 }
 
 // ============================================================================

@@ -158,6 +158,29 @@ export interface Analytics {
 }
 
 // ============================================================================
+// Extended Domain Models (with calculated fields)
+// ============================================================================
+
+export interface ProjectWithStats extends Project {
+  totalSessions: number
+  totalCodingMinutes: number
+  lastWorkedDate: Date | null
+  momentum: Momentum
+}
+
+export interface ProjectFilters {
+  isActive?: boolean | null
+  sortBy?: 'updatedAt' | 'feelsRightScore' | 'momentum' | null
+  search?: string | null
+}
+
+export interface ProjectStats {
+  activeProjectsCount: number
+  projectsShippedThisMonth: number
+  totalProjects: number
+}
+
+// ============================================================================
 // API Response Types
 // ============================================================================
 
@@ -211,6 +234,14 @@ export interface UpdateProjectRequest {
   isActive?: boolean
 }
 
+export interface FeelsRightScoreRequest {
+  score: number
+}
+
+export interface RecordPivotRequest {
+  notes?: string
+}
+
 export interface CreateNoteRequest {
   title?: string
   content: string
@@ -258,15 +289,29 @@ export interface StartSessionDialogProps {
 }
 
 export interface ProjectCardProps {
-  project: Project
-  onUpdate?: (projectId: string) => void
+  project: ProjectWithStats
+  onUpdate?: (project: Project) => void
   onStartSession?: (projectId: string) => void
+  onDelete?: (projectId: string) => void
 }
 
 export interface FeelsRightSliderProps {
   projectId: string
   initialValue: number
   onChange: (value: number) => void
+  disabled?: boolean
+}
+
+export interface CreateProjectDialogProps {
+  isOpen: boolean
+  onClose: () => void
+  onProjectCreated?: (project: Project) => void
+}
+
+export interface PivotCounterProps {
+  projectId: string
+  currentCount: number
+  onPivotRecorded?: () => void
 }
 
 export interface NoteCardProps {
