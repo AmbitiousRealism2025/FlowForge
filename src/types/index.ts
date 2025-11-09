@@ -191,6 +191,27 @@ export interface ProjectStats {
   totalProjects: number
 }
 
+export interface HabitWithStats extends Habit {
+  completedToday: boolean
+  daysUntilDue: number
+  completionRate: number
+}
+
+export interface HabitSummaryStats {
+  totalActiveHabits: number
+  longestCurrentStreak: number
+  habitsCompletedToday: number
+  totalCompletions: number
+}
+
+export interface HabitStreakData {
+  currentStreak: number
+  longestStreak: number
+  completionDates: Date[]
+  completionRate: number
+  lastCompletedAt: Date | null
+}
+
 // ============================================================================
 // API Response Types
 // ============================================================================
@@ -273,6 +294,22 @@ export interface UpdateNoteRequest {
 }
 
 export interface MarkShipRequest {
+  notes?: string
+}
+
+export interface CreateHabitRequest {
+  name: string
+  category: HabitCategory
+  targetFrequency: number
+}
+
+export interface UpdateHabitRequest {
+  name?: string
+  targetFrequency?: number
+  isActive?: boolean
+}
+
+export interface CompleteHabitRequest {
   notes?: string
 }
 
@@ -360,6 +397,21 @@ export interface ShipStreakCardProps {
   longestStreak: number
   lastShipDate?: Date | string
   onMarkShip: () => void
+}
+
+export interface HabitCardProps {
+  habit: HabitWithStats
+  onComplete: (habitId: string) => void
+  onEdit?: (habitId: string) => void
+  onArchive?: (habitId: string) => void
+}
+
+export interface HabitCheckInProps {
+  habitId: string
+  habitName: string
+  completedToday: boolean
+  onComplete: () => Promise<void>
+  isLoading: boolean
 }
 
 // ============================================================================
