@@ -387,6 +387,58 @@ export interface SessionStats {
 }
 
 // ============================================================================
+// Advanced Analytics Types (Phase 2.2)
+// ============================================================================
+
+export interface FlowScoreTrendData {
+  date: string // YYYY-MM-DD format
+  averageScore: number // 0-10 scale
+  sessionCount: number
+  totalMinutes: number
+}
+
+export interface ModelPerformanceData {
+  modelName: string
+  averageScore: number
+  sessionCount: number
+  totalMinutes: number
+  bestSessionType: SessionType
+}
+
+export interface ProductivityHeatmapData {
+  dayOfWeek: number // 0-6, Sunday-Saturday
+  hour: number // 0-23
+  averageScore: number
+  sessionCount: number
+}
+
+export interface AnalyticsSummary {
+  averageFlowScore: number
+  mostProductiveModel: string
+  bestTimeOfDay: string
+  totalShipsThisMonth: number
+  totalCodingMinutes: number
+}
+
+export type DateRangeFilter = '7d' | '30d' | '90d' | 'all'
+
+export interface FlowScoreChartProps {
+  data: FlowScoreTrendData[]
+  isLoading: boolean
+  dateRange: DateRangeFilter
+}
+
+export interface ModelPerformanceCardProps {
+  data: ModelPerformanceData[]
+  isLoading: boolean
+}
+
+export interface BestTimesHeatmapProps {
+  data: ProductivityHeatmapData[]
+  isLoading: boolean
+}
+
+// ============================================================================
 // Utility Types
 // ============================================================================
 
