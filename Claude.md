@@ -54,6 +54,7 @@ FlowForge is an AI productivity companion designed for developers who practice "
 - **Real-time**: WebSocket with Socket.io
 - **Offline**: Service Workers + IndexedDB
 - **PWA**: Progressive Web App with Capacitor.js for native apps
+- **Timezone Handling**: Luxon for timezone-aware date operations
 
 ## Project Structure
 
@@ -129,12 +130,13 @@ See `Desktop/Coding Projects/FlowForge/phase1_tasks/` for detailed tasks:
 
 ## Key Domain Models
 
-- **User**: Flow state tracking, ship streak, authentication
+- **User**: Flow state tracking, ship streak, authentication, timezone preferences
 - **Project**: "Feels right" progress tracking, flexible ship targets
 - **Session**: AI-assisted coding sessions with context health monitoring
 - **Habit**: Vibe coder specific habits (Daily Ship, Context Refresh, etc.)
 - **Note**: Prompt patterns, golden code snippets, debug logs
 - **AIContext**: AI model health monitoring
+- **Analytics**: Daily ship tracking with timezone-normalized dates (stored as UTC, represents user's local day start)
 
 ## Success Metrics (Phase 1)
 
@@ -150,6 +152,14 @@ See `Desktop/Coding Projects/FlowForge/phase1_tasks/` for detailed tasks:
 3. **Vibe Coding Focus**: Remember this is for AI-assisted developers
 4. **Flow State Protection**: All features should enhance, not disrupt creative flow
 5. **Performance First**: Meet benchmarks at every step
+6. **Timezone Handling**: Always use `getUserDayStart(timezone)` from `src/lib/timezone.ts` for date normalization
+   - All `Analytics.date` values are stored normalized to user's day start (as UTC)
+   - Use dates directly from DB for comparisons (already normalized)
+   - Use `formatUserDate()` only for display purposes
+7. **Git Workflow**:
+   - Always work on feature branches, never directly on `master`
+   - Use descriptive branch names: `feature/`, `fix/`, `refactor/`
+   - Sync with master regularly using `git pull origin master --rebase`
 
 ## Color Palette
 
