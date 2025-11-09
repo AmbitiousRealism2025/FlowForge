@@ -1,12 +1,15 @@
 /** @type {import('next').NextConfig} */
-const withPWA = require('next-pwa')({
-  dest: 'public',
-  disable: process.env.NODE_ENV === 'development',
-  register: true,
-  skipWaiting: true,
-})
+import withPWA from 'next-pwa'
 
-const nextConfig = {
+/**
+ * Next.js configuration
+ *
+ * Note:
+ * - This file is CommonJS because Next.js traditionally evaluates next.config.js in a Node (CJS) context.
+ * - The "require" of next-pwa is valid here; ESLint should treat this file as a Node/CJS config.
+ *   If your ESLint config flags this, mark this file as env: { node: true } or ignore it via overrides.
+ */
+const nextConfig = withPWA({
   reactStrictMode: true,
   swcMinify: true,
   poweredByHeader: false,
@@ -30,32 +33,32 @@ const nextConfig = {
         headers: [
           {
             key: 'X-DNS-Prefetch-Control',
-            value: 'on'
+            value: 'on',
           },
           {
             key: 'Strict-Transport-Security',
-            value: 'max-age=63072000; includeSubDomains; preload'
+            value: 'max-age=63072000; includeSubDomains; preload',
           },
           {
             key: 'X-Frame-Options',
-            value: 'SAMEORIGIN'
+            value: 'SAMEORIGIN',
           },
           {
             key: 'X-Content-Type-Options',
-            value: 'nosniff'
+            value: 'nosniff',
           },
           {
             key: 'X-XSS-Protection',
-            value: '1; mode=block'
+            value: '1; mode=block',
           },
           {
             key: 'Referrer-Policy',
-            value: 'origin-when-cross-origin'
-          }
-        ]
-      }
+            value: 'origin-when-cross-origin',
+          },
+        ],
+      },
     ]
-  }
-}
+  },
+})
 
-module.exports = withPWA(nextConfig)
+export default nextConfig
