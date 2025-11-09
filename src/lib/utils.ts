@@ -6,6 +6,10 @@ import {
   parseISO,
   differenceInMinutes,
   differenceInSeconds,
+  differenceInDays,
+  differenceInHours,
+  isAfter,
+  isBefore,
 } from 'date-fns'
 import { SessionType, SessionStatus, NoteCategory, Momentum, CodingSession } from '@/types'
 
@@ -223,6 +227,105 @@ export function getMomentumColor(momentum: Momentum): string {
       return 'text-yellow-500'
     case 'QUIET':
       return 'text-gray-400'
+  }
+}
+
+/**
+ * Get emoji icon for momentum status
+ */
+export function getMomentumEmoji(momentum: Momentum): string {
+  switch (momentum) {
+    case 'HOT':
+      return '🔥'
+    case 'ACTIVE':
+      return '⚡'
+    case 'QUIET':
+      return '💤'
+  }
+}
+
+/**
+ * Get human-readable label for momentum status
+ */
+export function getMomentumLabel(momentum: Momentum): string {
+  switch (momentum) {
+    case 'HOT':
+      return 'Hot'
+    case 'ACTIVE':
+      return 'Active'
+    case 'QUIET':
+      return 'Quiet'
+  }
+}
+
+/**
+ * Get emoji icon for feels right score (1-5)
+ */
+export function getFeelsRightEmoji(score: number): string {
+  const clampedScore = Math.max(1, Math.min(5, score))
+  switch (clampedScore) {
+    case 1:
+      return '😰'
+    case 2:
+      return '😕'
+    case 3:
+      return '😐'
+    case 4:
+      return '😊'
+    case 5:
+      return '🚀'
+    default:
+      return '😐'
+  }
+}
+
+/**
+ * Get human-readable label for feels right score (1-5)
+ */
+export function getFeelsRightLabel(score: number): string {
+  const clampedScore = Math.max(1, Math.min(5, score))
+  switch (clampedScore) {
+    case 1:
+      return 'Struggling'
+    case 2:
+      return 'Uncertain'
+    case 3:
+      return 'Okay'
+    case 4:
+      return 'Good'
+    case 5:
+      return 'Nailing It'
+    default:
+      return 'Okay'
+  }
+}
+
+/**
+ * Get Tailwind color class for feels right score (1-5)
+ */
+export function getFeelsRightColor(score: number): string {
+  const clampedScore = Math.max(1, Math.min(5, score))
+  if (clampedScore <= 2) return 'text-stuck-red'
+  if (clampedScore === 3) return 'text-caution-amber'
+  return 'text-flow-green'
+}
+
+/**
+ * Format ship target date to human-readable string
+ */
+export function formatShipTarget(shipTarget: Date | null | undefined): string {
+  if (!shipTarget) return 'No target set'
+
+  const targetDate = typeof shipTarget === 'string' ? parseISO(shipTarget) : shipTarget
+  const now = new Date()
+  const daysDiff = differenceInDays(targetDate, now)
+
+  if (daysDiff > 0) {
+    return `Ships in ${daysDiff} ${daysDiff === 1 ? 'day' : 'days'}`
+  } else if (daysDiff < 0) {
+    return `Shipped ${Math.abs(daysDiff)} ${Math.abs(daysDiff) === 1 ? 'day' : 'days'} ago`
+  } else {
+    return 'Ships today'
   }
 }
 
