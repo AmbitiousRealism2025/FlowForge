@@ -6,7 +6,13 @@ import {
   UpdateSessionRequest,
   ApiResponse,
 } from '@/types'
-import { formatDuration, calculateDuration } from '@/lib/utils'
+import {
+  formatDuration,
+  calculateDuration,
+  getSessionTypeIcon,
+  getSessionTypeLabel,
+  getSessionStatusLabel,
+} from '@/lib/utils'
 
 // ============================================================================
 // Constants
@@ -58,6 +64,49 @@ export async function startSession(
       data: session,
       error: null,
       message: 'Session started successfully',
+    }
+  } catch (error) {
+    return {
+      success: false,
+      data: null,
+      error: handleSessionError(error),
+      message: null,
+    }
+  }
+}
+
+/**
+ * Update session with partial data
+ */
+export async function updateSession(
+  sessionId: string,
+  data: UpdateSessionRequest
+): Promise<ApiResponse<CodingSession>> {
+  try {
+    const response = await fetch(`${API_BASE_URL}/${sessionId}`, {
+      method: 'PATCH',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(data),
+    })
+
+    if (!response.ok) {
+      const error = await response.json()
+      return {
+        success: false,
+        data: null,
+        error: error.message || 'Failed to update session',
+        message: null,
+      }
+    }
+
+    const session = await response.json()
+    return {
+      success: true,
+      data: session,
+      error: null,
+      message: 'Session updated successfully',
     }
   } catch (error) {
     return {
@@ -260,6 +309,26 @@ export async function updateSessionDuration(
 }
 
 /**
+ * Sync session duration with server (background sync)
+ * Returns boolean indicating success - errors are logged but not thrown
+ */
+export async function syncSessionDuration(
+  sessionId: string,
+  durationSeconds: number
+): Promise<boolean> {
+  try {
+    const result = await updateSession(sessionId, { durationSeconds })
+    if (!result.success) {
+      console.error('Failed to sync session duration:', result.error)
+    }
+    return result.success
+  } catch (error) {
+    console.error('Error syncing session duration:', error)
+    return false
+  }
+}
+
+/**
  * Save a checkpoint note to the session
  */
 export async function saveCheckpoint(
@@ -338,6 +407,23 @@ export function formatSessionDuration(session: CodingSession): string {
 }
 
 /**
+ * Format session info for display in SessionCard
+ */
+export function formatSessionInfo(session: CodingSession): {
+  duration: string
+  typeIcon: string
+  typeLabel: string
+  statusLabel: string
+} {
+  return {
+    duration: formatSessionDuration(session),
+    typeIcon: getSessionTypeIcon(session.sessionType),
+    typeLabel: getSessionTypeLabel(session.sessionType),
+    statusLabel: getSessionStatusLabel(session.sessionStatus),
+  }
+}
+
+/**
  * Get human-readable session status
  */
 export function getSessionStatus(session: CodingSession): string {
@@ -352,24 +438,6 @@ export function getSessionStatus(session: CodingSession): string {
       return 'Abandoned'
     default:
       return 'Unknown'
-  }
-}
-
-/**
- * Get icon/emoji for session type
- */
-export function getSessionTypeIcon(sessionType: SessionType): string {
-  switch (sessionType) {
-    case SessionType.BUILDING:
-      return '🔨'
-    case SessionType.EXPLORING:
-      return '🔍'
-    case SessionType.DEBUGGING:
-      return '🐛'
-    case SessionType.SHIPPING:
-      return '🚀'
-    default:
-      return '💻'
   }
 }
 

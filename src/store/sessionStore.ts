@@ -1,5 +1,7 @@
+'use client'
+
 import { create } from 'zustand'
-import { persist } from 'zustand/middleware'
+import { persist, createJSONStorage } from 'zustand/middleware'
 import { SessionType } from '@/types'
 import { formatDuration } from '@/lib/utils'
 
@@ -23,8 +25,8 @@ interface SessionActions {
   startSession: (
     sessionId: string,
     sessionType: SessionType,
-    projectId?: string,
-    aiModel?: string
+    projectId: string | null,
+    aiModel: string
   ) => void
   pauseSession: () => void
   resumeSession: () => void
@@ -72,8 +74,8 @@ export const useSessionStore = create<SessionStore>()(
         set({
           activeSessionId: sessionId,
           sessionType,
-          projectId: projectId || null,
-          aiModel: aiModel || null,
+          projectId,
+          aiModel,
           startTime: new Date(),
           isPaused: false,
           elapsedSeconds: 0,
@@ -172,6 +174,7 @@ export const useSessionStore = create<SessionStore>()(
     }),
     {
       name: 'flowforge-session-store',
+      storage: createJSONStorage(() => localStorage),
       // Only persist critical state, exclude temporary UI state
       partialize: (state) => ({
         activeSessionId: state.activeSessionId,
@@ -182,18 +185,6 @@ export const useSessionStore = create<SessionStore>()(
         elapsedSeconds: state.elapsedSeconds,
         contextHealth: state.contextHealth,
       }),
-      merge: (persistedState, currentState) => {
-        const mergedState = {
-          ...currentState,
-          ...(persistedState as Partial<SessionStore>),
-        }
-
-        if (mergedState.startTime && typeof mergedState.startTime === 'string') {
-          mergedState.startTime = new Date(mergedState.startTime)
-        }
-
-        return mergedState
-      },
     }
   )
 )

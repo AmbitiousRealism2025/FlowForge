@@ -236,15 +236,25 @@ export interface SessionTimerProps {
   sessionId: string
   startTime: Date
   isPaused: boolean
+  elapsedSeconds: number
+  contextHealth: number
   onPause: () => void
   onResume: () => void
   onEnd: () => void
+  onCheckpoint: () => void
 }
 
 export interface SessionCardProps {
   session: CodingSession
   onDelete?: (sessionId: string) => void
+  onCheckpoint?: (sessionId: string) => void
   onViewDetails?: (sessionId: string) => void
+}
+
+export interface StartSessionDialogProps {
+  isOpen: boolean
+  onClose: () => void
+  onSessionStarted?: (session: CodingSession) => void
 }
 
 export interface ProjectCardProps {
@@ -288,6 +298,12 @@ export interface StreakData {
   currentStreak: number
   longestStreak: number
   lastShipDate?: Date
+}
+
+export interface SessionStats {
+  totalSessions: number
+  totalCodingMinutes: number
+  averageSessionDuration: number
 }
 
 // ============================================================================
